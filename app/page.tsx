@@ -151,6 +151,8 @@ export default function OpseraLanding() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>('argo');
   const [showAgentDetails, setShowAgentDetails] = useState(false);
   const [chatTick, setChatTick] = useState(0);
+  const [showAccessModal, setShowAccessModal] = useState(false);
+  const [email, setEmail] = useState('');
 
   // Single timer for all robot chat cycling - prevents multiple interval conflicts
   useEffect(() => {
@@ -272,6 +274,9 @@ export default function OpseraLanding() {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 mt-2">
               <motion.button
+                onClick={() => {
+                  document.getElementById('cta')?.scrollIntoView({ behavior: 'smooth' });
+                }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center justify-center gap-2 bg-[#2D1B4E]/10 backdrop-blur-sm border border-[#2D1B4E]/30 text-[#2D1B4E] px-6 py-3 rounded-full text-sm hover:bg-[#2D1B4E]/20 transition-all"
@@ -1172,7 +1177,7 @@ export default function OpseraLanding() {
       </section>
 
       {/* The Grand Finale - CTA Section */}
-      <section className="relative py-48 px-6 bg-gradient-to-b from-[#2D1B4E] via-[#3d2a5f] to-[#2D1B4E] overflow-hidden">
+      <section id="cta" className="relative py-48 px-6 bg-gradient-to-b from-[#2D1B4E] via-[#3d2a5f] to-[#2D1B4E] overflow-hidden">
         {/* Energy Orb Background Effect */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-[#E8B84A] to-[#E8A87C] rounded-full blur-[120px] opacity-20 animate-pulse pointer-events-none" />
 
@@ -1194,6 +1199,7 @@ export default function OpseraLanding() {
             </h3>
 
             <motion.button
+              onClick={() => setShowAccessModal(true)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="relative group bg-gradient-to-r from-[#E8B84A] to-[#E8A87C] text-[#2D1B4E] font-bold px-16 py-6 text-xl rounded-full shadow-[0_0_40px_rgba(232,184,74,0.4)] hover:shadow-[0_0_80px_rgba(232,184,74,0.6)] transition-all duration-300 overflow-hidden"
@@ -1204,6 +1210,93 @@ export default function OpseraLanding() {
             </motion.button>
           </motion.div>
         </div>
+
+        {/* Request Access Modal */}
+        {showAccessModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowAccessModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-md w-full rounded-2xl p-8 border"
+              style={{
+                backgroundColor: '#1a1a2e',
+                borderColor: 'rgba(232, 184, 74, 0.3)',
+                boxShadow: '0 0 60px rgba(232, 184, 74, 0.2)',
+              }}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setShowAccessModal(false)}
+                className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {/* Header */}
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-[#E8B84A] to-[#E8A87C] flex items-center justify-center">
+                  <Rocket className="w-8 h-8 text-[#2D1B4E]" />
+                </div>
+                <h4 className="text-2xl font-bold text-white mb-2">Request Access</h4>
+                <p className="text-white/60 text-sm">
+                  Enter your email to join the waitlist and be among the first to experience Opsera.
+                </p>
+              </div>
+
+              {/* Email Input */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  // Handle form submission here
+                  console.log('Email submitted:', email);
+                  setShowAccessModal(false);
+                  setEmail('');
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-white/70 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    required
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#E8B84A]/50 focus:ring-2 focus:ring-[#E8B84A]/20 transition-all"
+                  />
+                </div>
+
+                <motion.button
+                  type="submit"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full py-3 rounded-xl font-semibold text-[#2D1B4E] bg-gradient-to-r from-[#E8B84A] to-[#E8A87C] hover:shadow-[0_0_30px_rgba(232,184,74,0.4)] transition-all"
+                >
+                  Join Waitlist
+                </motion.button>
+              </form>
+
+              {/* Footer note */}
+              <p className="text-center text-white/40 text-xs mt-4">
+                We respect your privacy. No spam, ever.
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
       </section>
 
       {/* Footer Section */}
