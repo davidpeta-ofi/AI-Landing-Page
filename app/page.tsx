@@ -1266,12 +1266,24 @@ export default function OpseraLanding() {
 
               {/* Email Input */}
               <form
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
-                  // Handle form submission here
-                  console.log('Email submitted:', email);
-                  setShowAccessModal(false);
-                  setEmail('');
+                  try {
+                    const res = await fetch('http://localhost:8000/api/waitlist/join/', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email }),
+                    });
+                    if (!res.ok) {
+                      const errorData = await res.text();
+                      console.error('Response status:', res.status, 'Body:', errorData);
+                      throw new Error(`Failed to join waitlist: ${res.status}`);
+                    }
+                    setShowAccessModal(false);
+                    setEmail('');
+                  } catch (err) {
+                    console.error('Waitlist error:', err);
+                  }
                 }}
                 className="space-y-4"
               >
