@@ -5,6 +5,7 @@ import { useRef, MouseEvent, useEffect, useState, useMemo } from 'react';
 import { ShaderAnimation } from "@/components/ui/shader-lines";
 import RadialOrbitalTimeline from "@/components/ui/radial-orbital-timeline";
 import { Users, Target, Box, Bot, Zap, ScanSearch, Rocket, Twitter, Linkedin, Github, MoveRight, Cpu, Brain, BookOpen, Lightbulb, Cog } from 'lucide-react';
+import Link from 'next/link';
 
 const CountUp = ({ to, duration = 2, suffix = "", prefix = "" }: { to: number, duration?: number, suffix?: string, prefix?: string }) => {
   const nodeRef = useRef<HTMLSpanElement>(null);
@@ -213,9 +214,9 @@ export default function OpseraLanding() {
             <a href="#products" className="text-white/70 hover:text-white transition-colors font-medium">
               Products
             </a>
-            <a href="#about" className="text-white/70 hover:text-white transition-colors font-medium">
+            <Link href="/about" className="text-white/70 hover:text-white transition-colors font-medium">
               About Us
-            </a>
+            </Link>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -283,23 +284,16 @@ export default function OpseraLanding() {
               >
                 Book a Demo
               </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#6B4E9B] to-[#2D1B4E] text-white font-semibold px-6 py-3 rounded-full text-sm shadow-[0_0_30px_rgba(107,78,155,0.4)] hover:shadow-[0_0_50px_rgba(107,78,155,0.6)] transition-all"
-              >
-                Get Started <MoveRight className="w-4 h-4" />
-              </motion.button>
+              <Link href="/about">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#6B4E9B] to-[#2D1B4E] text-white font-semibold px-6 py-3 rounded-full text-sm shadow-[0_0_30px_rgba(107,78,155,0.4)] hover:shadow-[0_0_50px_rgba(107,78,155,0.6)] transition-all"
+                >
+                  Read our launch article <MoveRight className="w-4 h-4" />
+                </motion.button>
+              </Link>
             </div>
-
-            {/* Read our launch article - below buttons */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex items-center gap-2 bg-[#E8B84A]/10 backdrop-blur-sm border border-[#E8B84A]/30 text-[#E8B84A] px-4 py-2 rounded-full text-xs hover:bg-[#E8B84A]/20 transition-all"
-            >
-              Read our launch article <MoveRight className="w-3 h-3" />
-            </motion.button>
           </motion.div>
 
           {/* Right - Friendly Robot Agents */}
@@ -441,9 +435,6 @@ export default function OpseraLanding() {
         </div>
 
       </section>
-
-      {/* Smooth transition from hero to products */}
-      <div className="h-32 bg-gradient-to-b from-white via-[#f5f0ff] to-[#1a0a2e]" />
 
       {/* Products Section - Built on Reality */}
       <section className="relative py-24 px-6 overflow-hidden min-h-[700px]" style={{ background: "linear-gradient(180deg, #1a0a2e 0%, #2D1B4E 50%, #3d2a5f 100%)" }}>
@@ -872,7 +863,7 @@ export default function OpseraLanding() {
       </section>
 
       {/* Smooth transition from AI Agents to Market Positioning */}
-      <div className="h-24 bg-gradient-to-b from-[#2D1B4E] via-[#4a3a6a] to-white" />
+      <div className="h-64" style={{ background: "linear-gradient(to bottom, #2D1B4E 0%, #3d2a5f 15%, #6b4e9b 35%, #b8a5d4 55%, #e8e0f0 75%, white 100%)" }} />
 
       {/* Market Positioning Section - The Intelligence Matrix */}
       <section className="relative py-32 px-6 bg-gradient-to-b from-white to-[#f5f0ff]">
@@ -927,6 +918,7 @@ export default function OpseraLanding() {
                     fill="url(#grid)"
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
                     transition={{ duration: 1.5 }}
                   />
 
@@ -936,6 +928,7 @@ export default function OpseraLanding() {
                     stroke="white" strokeWidth="2"
                     initial={{ pathLength: 0 }}
                     whileInView={{ pathLength: 1 }}
+                    viewport={{ once: true }}
                     transition={{ duration: 1, delay: 0.5 }}
                   />
                   <motion.line
@@ -943,6 +936,7 @@ export default function OpseraLanding() {
                     stroke="white" strokeWidth="2"
                     initial={{ pathLength: 0 }}
                     whileInView={{ pathLength: 1 }}
+                    viewport={{ once: true }}
                     transition={{ duration: 1, delay: 0.5 }}
                   />
                 </svg>
@@ -952,8 +946,10 @@ export default function OpseraLanding() {
                   <span>Months to Value</span>
                   <span>Days to Value</span>
                 </div>
-                <div className="absolute left-14 top-8 bottom-16 text-white/40 text-xs tracking-widest font-mono flex flex-col justify-between uppercase h-[calc(100%-6rem)] pointer-events-none">
+                <div className="absolute left-14 top-8 text-white/40 text-xs tracking-widest font-mono uppercase pointer-events-none">
                   <span>High Capability</span>
+                </div>
+                <div className="absolute left-28 bottom-14 text-white/40 text-xs tracking-widest font-mono uppercase pointer-events-none">
                   <span>Low Capability</span>
                 </div>
               </div>
@@ -964,40 +960,53 @@ export default function OpseraLanding() {
                 {/* Competitor: Legacy ERP (High Capability, Slow Time) - Top Left */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0 }}
-                  whileInView={{ opacity: 0.5, scale: 1 }}
+                  whileInView={{ opacity: 0.8, scale: 1 }}
+                  viewport={{ once: true }}
                   transition={{ delay: 1 }}
                   className="absolute top-[30%] left-[20%]"
                 >
-                  <div className="w-3 h-3 bg-gray-400 rounded-full" />
-                  <div className="mt-2 text-[10px] text-white/50 font-mono whitespace-nowrap -ml-4">Legacy ERP</div>
+                  <div className="relative flex items-center justify-center">
+                    <div className="absolute w-full h-full bg-white/20 rounded-full blur-sm" />
+                    <div className="w-4 h-4 bg-gradient-to-br from-white/60 to-white/30 rounded-full ring-2 ring-white/10" />
+                  </div>
+                  <div className="mt-3 text-xs text-white/70 font-mono whitespace-nowrap -ml-4">Legacy ERP</div>
                 </motion.div>
 
                 {/* Competitor: Consulting (Mid Capability, Slow Time) - Mid Left */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0 }}
-                  whileInView={{ opacity: 0.5, scale: 1 }}
+                  whileInView={{ opacity: 0.8, scale: 1 }}
+                  viewport={{ once: true }}
                   transition={{ delay: 1.2 }}
                   className="absolute top-[50%] left-[25%]"
                 >
-                  <div className="w-3 h-3 bg-gray-400 rounded-full" />
-                  <div className="mt-2 text-[10px] text-white/50 font-mono whitespace-nowrap -ml-4">Consulting Firms</div>
+                  <div className="relative flex items-center justify-center">
+                    <div className="absolute w-full h-full bg-white/20 rounded-full blur-sm" />
+                    <div className="w-4 h-4 bg-gradient-to-br from-white/60 to-white/30 rounded-full ring-2 ring-white/10" />
+                  </div>
+                  <div className="mt-3 text-xs text-white/70 font-mono whitespace-nowrap -ml-4">Consulting Firms</div>
                 </motion.div>
 
                 {/* Competitor: Generic AI (Low Capability, Fast Time) - Bottom Right */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0 }}
-                  whileInView={{ opacity: 0.5, scale: 1 }}
+                  whileInView={{ opacity: 0.8, scale: 1 }}
+                  viewport={{ once: true }}
                   transition={{ delay: 1.4 }}
                   className="absolute bottom-[20%] right-[30%]"
                 >
-                  <div className="w-3 h-3 bg-gray-400 rounded-full" />
-                  <div className="mt-2 text-[10px] text-white/50 font-mono whitespace-nowrap -ml-8">Generic AI Bots</div>
+                  <div className="relative flex items-center justify-center">
+                    <div className="absolute w-full h-full bg-white/20 rounded-full blur-sm" />
+                    <div className="w-4 h-4 bg-gradient-to-br from-white/60 to-white/30 rounded-full ring-2 ring-white/10" />
+                  </div>
+                  <div className="mt-3 text-xs text-white/70 font-mono whitespace-nowrap -ml-8">Generic AI Bots</div>
                 </motion.div>
 
                 {/* OPSERA: The Hero (High Capability, Fast Time) - Top Right */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0 }}
                   whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
                   transition={{ type: "spring", stiffness: 260, damping: 20, delay: 1.8 }}
                   className="absolute top-[20%] right-[15%]"
                 >
@@ -1013,6 +1022,7 @@ export default function OpseraLanding() {
                     <motion.div
                       initial={{ opacity: 0, x: -10 }}
                       whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
                       transition={{ delay: 2.2 }}
                       className="absolute right-full mr-4 bg-white/10 backdrop-blur-md border border-[#E8B84A]/30 text-[#E8B84A] px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow-lg"
                     >
@@ -1032,7 +1042,7 @@ export default function OpseraLanding() {
       </section>
 
       {/* Smooth transition from Market to Technology */}
-      <div className="h-24 bg-gradient-to-b from-[#f5f0ff] via-[#c4b5d8] to-[#2D1B4E]" />
+      <div className="h-64" style={{ background: "linear-gradient(to bottom, #f5f0ff 0%, #e0d5f0 20%, #b8a5d4 40%, #6b4e9b 65%, #3d2a5f 80%, #2D1B4E 100%)" }} />
 
       {/* Technology Stack Section - 3D Platform with Bars */}
       <section className="relative py-32 px-6 bg-[#2D1B4E] overflow-hidden">
