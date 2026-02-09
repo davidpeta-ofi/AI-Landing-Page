@@ -234,9 +234,9 @@ export default function ProductsPage() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-light text-[#2D1B4E] mb-32 tracking-tight drop-shadow-lg">
-              Intelligent solutions for your
-              <div className="relative w-full h-[1.2em] mt-2 overflow-hidden">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-light text-[#2D1B4E] mb-25 mt-32 tracking-tight drop-shadow-lg">
+              Intelligent solutions for your:
+              <div className="relative w-full h-[1.7em] mt-3 overflow-hidden">
                 {dynamicWords.map((word, index) => (
                   <motion.span
                     key={word}
