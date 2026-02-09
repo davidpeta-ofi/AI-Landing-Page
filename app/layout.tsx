@@ -21,6 +21,10 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "SIA",
   description: "Domain-specific AI agents that deliver clarity and automation in 30 days",
+  icons: {
+    icon: "/sia-favicon.png",
+    apple: "/sia-apple-icon.png",
+  },
 };
 
 export default function RootLayout({
