@@ -121,8 +121,8 @@ export default function Chatbot() {
         whileTap={{ scale: 0.9 }}
         className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-lg cursor-pointer"
         style={{
-          background: 'linear-gradient(135deg, #6B4E9B, #2D1B4E)',
-          boxShadow: '0 4px 24px rgba(107, 78, 155, 0.5)',
+          background: 'linear-gradient(135deg, #E8B84A, #E8A87C)',
+          boxShadow: '0 4px 24px rgba(232, 184, 74, 0.5)',
         }}
         aria-label={isOpen ? 'Close chat' : 'Open chat'}
       >
@@ -207,7 +207,7 @@ export default function Chatbot() {
                     className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                       msg.sender === 'user'
                         ? 'bg-gradient-to-r from-[#6B4E9B] to-[#8B5CF6] text-white rounded-br-md'
-                        : 'bg-white/8 text-white/85 border border-white/10 rounded-bl-md'
+                        : 'bg-gradient-to-r from-[#E8B84A]/15 to-[#E8A87C]/15 text-[#E8B84A] border border-[#E8B84A]/20 rounded-bl-md'
                     }`}
                   >
                     {msg.text}

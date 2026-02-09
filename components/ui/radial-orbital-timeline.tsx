@@ -186,8 +186,13 @@ export default function RadialOrbitalTimeline({
                 ref={(el) => {
                   nodeRefs.current[item.id] = el;
                 }}
-                className="absolute transition-all duration-500 cursor-pointer"
-                style={nodeStyle}
+                className="absolute cursor-pointer"
+                style={{
+                  ...nodeStyle,
+                  transition: selectedId !== null
+                    ? 'transform 0.5s ease, opacity 0.5s ease'
+                    : 'opacity 0.5s ease',
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleNodeClick(item.id);
