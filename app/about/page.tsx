@@ -4,10 +4,25 @@ import { motion } from 'framer-motion';
 import Chatbot from '@/components/ui/chatbot';
 import { useEffect, useState, useRef } from 'react';
 
-import { useState } from 'react';
-
 export default function AboutPage() {
   const [activePanel, setActivePanel] = useState<'why' | 'how' | 'what' | null>(null);
+  const [navVisible, setNavVisible] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      setNavVisible(currentY < lastScrollY.current || currentY < 10);
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const showPanel = (panel: 'why' | 'how' | 'what') => {
     setActivePanel(panel);
@@ -257,8 +272,9 @@ export default function AboutPage() {
               </div>
             </div>
           </div>
+        </motion.div>
         </div>
-      </section>
+      </div>
 
       {/* SECTION 2: THE PROBLEM */}
       <section className="py-32 px-16 bg-gradient-to-b from-gray-900 to-purple-950 relative overflow-hidden">
@@ -454,6 +470,7 @@ export default function AboutPage() {
           <a href="#" className="hover:text-gray-900 transition-colors">
             Cookies
           </a>
+        </div>
 
         <div className="mt-20 text-center text-[#2D1B4E]/20 text-xs tracking-widest">
           © {new Date().getFullYear()} SIA INC. ALL RIGHTS RESERVED.

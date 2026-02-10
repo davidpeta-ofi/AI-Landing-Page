@@ -149,7 +149,19 @@ export default function ProductsPage() {
   const [wordIndex, setWordIndex] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<typeof products[0] | null>(null);
   const [shouldScrollToDetails, setShouldScrollToDetails] = useState(false);
+  const [navVisible, setNavVisible] = useState(true);
   const productDetailsRef = useRef<HTMLDivElement>(null);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      setNavVisible(currentY < lastScrollY.current || currentY < 10);
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Rotate words
   useEffect(() => {
