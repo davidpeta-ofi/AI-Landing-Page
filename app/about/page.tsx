@@ -1,246 +1,21 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useEffect, useState, useRef } from 'react';
 import Chatbot from '@/components/ui/chatbot';
+import { useEffect, useState, useRef } from 'react';
+
+import { useState } from 'react';
 
 export default function AboutPage() {
-  const [mounted, setMounted] = useState(false);
-  const [visionRotation, setVisionRotation] = useState(0);
-  const [visionOpacity, setVisionOpacity] = useState(1);
-  const [purposeRotation, setPurposeRotation] = useState(0);
-  const [purposeOpacity, setPurposeOpacity] = useState(1);
-  const [missionRotation, setMissionRotation] = useState(0);
-  const [missionOpacity, setMissionOpacity] = useState(1);
-  const [hoveredBox, setHoveredBox] = useState<'vision' | 'purpose' | 'mission' | null>(null);
-  const [selectedBox, setSelectedBox] = useState<'vision' | 'purpose' | 'mission' | null>(null);
-  const [navVisible, setNavVisible] = useState(true);
-  const lastScrollY = useRef(0);
+  const [activePanel, setActivePanel] = useState<'why' | 'how' | 'what' | null>(null);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentY = window.scrollY;
-      setNavVisible(currentY < lastScrollY.current || currentY < 10);
-      lastScrollY.current = currentY;
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const showPanel = (panel: 'why' | 'how' | 'what') => {
+    setActivePanel(panel);
+  };
 
-  // Use refs to track individual pause states
-  const isVisionPausedRef = useRef(false);
-  const isPurposePausedRef = useRef(false);
-  const isMissionPausedRef = useRef(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Update pause states and selected box based on hover
-  useEffect(() => {
-    isVisionPausedRef.current = hoveredBox === 'vision';
-    isPurposePausedRef.current = hoveredBox === 'purpose';
-    isMissionPausedRef.current = hoveredBox === 'mission';
-
-    if (hoveredBox !== null) {
-      setSelectedBox(hoveredBox);
-    }
-  }, [hoveredBox]);
-
-  // Vision animation (35s duration)
-  useEffect(() => {
-    if (!mounted) return;
-
-    const startTime = Date.now(); // No delay
-    const duration = 35000;
-    let totalPausedTime = 0;
-    let pauseStartTime: number | null = null;
-
-    const animate = () => {
-      if (isVisionPausedRef.current) {
-        if (pauseStartTime === null) {
-          pauseStartTime = Date.now();
-        }
-        requestAnimationFrame(animate);
-        return;
-      }
-
-      // If we just resumed from pause
-      if (pauseStartTime !== null) {
-        totalPausedTime += Date.now() - pauseStartTime;
-        pauseStartTime = null;
-      }
-
-      const elapsed = Date.now() - startTime - totalPausedTime;
-
-      if (elapsed < 0) {
-        requestAnimationFrame(animate);
-        return;
-      }
-
-      const progress = (elapsed % duration) / duration;
-
-      let degrees, opacity;
-
-      if (progress < 0.44) {
-        // 0 to 90 degrees (first 44% of cycle) - constant speed
-        degrees = (progress / 0.44) * 90;
-        opacity = 1;
-      } else if (progress < 0.52) {
-        // Fade out at 90 degrees (no movement)
-        degrees = 90;
-        opacity = 1 - (progress - 0.44) / 0.08;
-      } else {
-        // Jump to 270 degrees and continue moving continuously until loop restarts
-        const elapsedAfterJump = progress - 0.52;
-        const remainingDuration = 0.48; // From 0.52 to 1.0
-
-        // Move exactly 90 degrees (270 to 360) over the entire remaining duration
-        // This ensures continuous movement with no pause at the end
-        degrees = 270 + (elapsedAfterJump / remainingDuration) * 90;
-
-        // Fade in during first 0.04
-        opacity = elapsedAfterJump < 0.04 ? elapsedAfterJump / 0.04 : 1;
-      }
-
-      setVisionRotation(degrees);
-      setVisionOpacity(opacity);
-      requestAnimationFrame(animate);
-    };
-
-    const animationId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animationId);
-  }, [mounted]);
-
-  // Purpose animation (28s duration)
-  useEffect(() => {
-    if (!mounted) return;
-
-    const startTime = Date.now(); // No delay
-    const duration = 28000;
-    let totalPausedTime = 0;
-    let pauseStartTime: number | null = null;
-
-    const animate = () => {
-      if (isPurposePausedRef.current) {
-        if (pauseStartTime === null) {
-          pauseStartTime = Date.now();
-        }
-        requestAnimationFrame(animate);
-        return;
-      }
-
-      // If we just resumed from pause
-      if (pauseStartTime !== null) {
-        totalPausedTime += Date.now() - pauseStartTime;
-        pauseStartTime = null;
-      }
-
-      const elapsed = Date.now() - startTime - totalPausedTime;
-
-      if (elapsed < 0) {
-        requestAnimationFrame(animate);
-        return;
-      }
-
-      const progress = (elapsed % duration) / duration;
-
-      let degrees, opacity;
-
-      if (progress < 0.44) {
-        // 0 to 90 degrees (first 44% of cycle) - constant speed
-        degrees = (progress / 0.44) * 90;
-        opacity = 1;
-      } else if (progress < 0.52) {
-        // Fade out at 90 degrees (no movement)
-        degrees = 90;
-        opacity = 1 - (progress - 0.44) / 0.08;
-      } else {
-        // Jump to 270 degrees and continue moving continuously until loop restarts
-        const elapsedAfterJump = progress - 0.52;
-        const remainingDuration = 0.48; // From 0.52 to 1.0
-
-        // Move exactly 90 degrees (270 to 360) over the entire remaining duration
-        // This ensures continuous movement with no pause at the end
-        degrees = 270 + (elapsedAfterJump / remainingDuration) * 90;
-
-        // Fade in during first 0.04
-        opacity = elapsedAfterJump < 0.04 ? elapsedAfterJump / 0.04 : 1;
-      }
-
-      setPurposeRotation(degrees);
-      setPurposeOpacity(opacity);
-      requestAnimationFrame(animate);
-    };
-
-    const animationId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animationId);
-  }, [mounted]);
-
-  // Mission animation (21s duration)
-  useEffect(() => {
-    if (!mounted) return;
-
-    const startTime = Date.now(); // No delay
-    const duration = 21000;
-    let totalPausedTime = 0;
-    let pauseStartTime: number | null = null;
-
-    const animate = () => {
-      if (isMissionPausedRef.current) {
-        if (pauseStartTime === null) {
-          pauseStartTime = Date.now();
-        }
-        requestAnimationFrame(animate);
-        return;
-      }
-
-      // If we just resumed from pause
-      if (pauseStartTime !== null) {
-        totalPausedTime += Date.now() - pauseStartTime;
-        pauseStartTime = null;
-      }
-
-      const elapsed = Date.now() - startTime - totalPausedTime;
-
-      if (elapsed < 0) {
-        requestAnimationFrame(animate);
-        return;
-      }
-
-      const progress = (elapsed % duration) / duration;
-
-      let degrees, opacity;
-
-      if (progress < 0.44) {
-        // 0 to 90 degrees (first 44% of cycle) - constant speed
-        degrees = (progress / 0.44) * 90;
-        opacity = 1;
-      } else if (progress < 0.52) {
-        // Fade out at 90 degrees (no movement)
-        degrees = 90;
-        opacity = 1 - (progress - 0.44) / 0.08;
-      } else {
-        // Jump to 270 degrees and continue moving continuously until loop restarts
-        const elapsedAfterJump = progress - 0.52;
-        const remainingDuration = 0.48; // From 0.52 to 1.0
-
-        // Move exactly 90 degrees (270 to 360) over the entire remaining duration
-        // This ensures continuous movement with no pause at the end
-        degrees = 270 + (elapsedAfterJump / remainingDuration) * 90;
-
-        // Fade in during first 0.04
-        opacity = elapsedAfterJump < 0.04 ? elapsedAfterJump / 0.04 : 1;
-      }
-
-      setMissionRotation(degrees);
-      setMissionOpacity(opacity);
-      requestAnimationFrame(animate);
-    };
-
-    const animationId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animationId);
-  }, [mounted]);
+  const resetPanel = () => {
+    setActivePanel(null);
+  };
 
   return (
     <div className="bg-gradient-to-b from-white via-[#faf5ff] to-white min-h-screen w-full overflow-x-hidden">
@@ -323,297 +98,362 @@ export default function AboutPage() {
                   }}
                 />
 
-                {/* Middle Orbit - PURPOSE */}
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: mounted ? 1 : 0, opacity: mounted ? 1 : 0 }}
-                  transition={{ duration: 0.8, delay: 0 }}
-                  className="absolute"
-                  style={{
-                    width: '600px',
-                    height: '600px',
-                    borderRadius: '50%',
-                    border: '3px solid #6366F1',
-                    bottom: '-375px',
-                    left: '50%',
-                    marginLeft: '-300px',
-                    background: 'radial-gradient(circle at center, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.25) 50%, transparent 100%)',
-                  }}
-                />
-
-                {/* Innermost Orbit - MISSION */}
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: mounted ? 1 : 0, opacity: mounted ? 1 : 0 }}
-                  transition={{ duration: 0.8, delay: 0 }}
-                  className="absolute"
-                  style={{
-                    width: '300px',
-                    height: '300px',
-                    borderRadius: '50%',
-                    border: '3px solid #6366F1',
-                    bottom: '-205px',
-                    left: '50%',
-                    marginLeft: '-150px',
-                    background: 'radial-gradient(circle at center, rgba(99, 102, 241, 0.25) 0%, rgba(99, 102, 241, 0.35) 50%, transparent 100%)',
-                  }}
-                />
-
-                {/* Text Boxes on Orbits - Moving with teleport */}
-                {/* Vision - Outermost (moving on orbit) */}
-                <div
-                  className="absolute z-30"
-                  style={{
-                    left: '50%',
-                    bottom: '-65px',
-                    width: '0px',
-                    height: '0px',
-                    transform: `rotate(${visionRotation}deg)`,
-                    opacity: visionOpacity,
-                    transition: 'opacity 0.3s ease-in-out',
-                  }}
-                >
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: '-50px',
-                      top: '-460px',
-                    }}
-                    onMouseEnter={() => setHoveredBox('vision')}
-                    onMouseLeave={() => setHoveredBox(null)}
-                  >
-                    <div
-                      className="px-5 py-2 rounded-full cursor-pointer transition-all duration-300"
-                      style={{
-                        background: 'rgba(243, 232, 255, 0.75)',
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
-                        border: '2px solid rgba(99, 102, 241, 0.3)',
-                        boxShadow: '0 8px 32px rgba(99, 102, 241, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
-                      }}
-                    >
-                      <svg width="70" height="18" viewBox="0 0 70 18" className="overflow-visible">
-                        <defs>
-                          <path id="visionCurve" d="M 0,11 Q 35,6 70,11" fill="none" />
-                        </defs>
-                        <text className="text-xs font-semibold fill-[#2D1B4E] uppercase tracking-wider" dominantBaseline="middle">
-                          <textPath href="#visionCurve" startOffset="50%" textAnchor="middle">
-                            Vision
-                          </textPath>
-                        </text>
-                      </svg>
-                    </div>
-                  </div>
+              {/* Why Panel */}
+              <motion.div
+                className={`absolute inset-0 transition-all duration-500 ${
+                  activePanel === 'why' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                }`}
+              >
+                <div className="inline-block px-4 py-1 rounded-full bg-amber-700/10 mb-6">
+                  <span className="text-xs font-semibold tracking-widest text-amber-700 uppercase">Why we exist</span>
                 </div>
-
-                {/* Purpose - Middle (moving on orbit) */}
-                <div
-                  className="absolute z-30"
-                  style={{
-                    left: '50%',
-                    bottom: '-75px',
-                    width: '0px',
-                    height: '0px',
-                    transform: `rotate(${purposeRotation}deg)`,
-                    opacity: purposeOpacity,
-                    transition: 'opacity 0.3s ease-in-out',
-                  }}
+                <h3 className="text-3xl font-light text-gray-900 mb-4 leading-tight">
+                  The future is arriving faster than businesses can react.
+                </h3>
+                <p className="text-base text-gray-600 font-light leading-relaxed">
+                  We exist to turn this uncertainty into an advantage — putting our customers in a position to act decisively, rather than reactively.
+                </p>
+                <button
+                  onClick={resetPanel}
+                  className="mt-6 text-sm font-medium text-amber-700 hover:opacity-70 transition-opacity"
                 >
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: '-50px',
-                      top: '-315px',
-                    }}
-                    onMouseEnter={() => setHoveredBox('purpose')}
-                    onMouseLeave={() => setHoveredBox(null)}
-                  >
-                    <div
-                      className="px-5 py-2 rounded-full cursor-pointer transition-all duration-300"
-                      style={{
-                        background: 'rgba(233, 213, 255, 0.75)',
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
-                        border: '2px solid rgba(99, 102, 241, 0.3)',
-                        boxShadow: '0 8px 32px rgba(99, 102, 241, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
-                      }}
-                    >
-                      <svg width="80" height="18" viewBox="0 0 80 18" className="overflow-visible">
-                        <defs>
-                          <path id="purposeCurve" d="M 0,11 Q 40,6 80,11" fill="none" />
-                        </defs>
-                        <text className="text-xs font-semibold fill-[#2D1B4E] uppercase tracking-wider" dominantBaseline="middle">
-                          <textPath href="#purposeCurve" startOffset="50%" textAnchor="middle">
-                            Purpose
-                          </textPath>
-                        </text>
-                      </svg>
-                    </div>
-                  </div>
+                  ← Back
+                </button>
+              </motion.div>
+
+              {/* How Panel */}
+              <motion.div
+                className={`absolute inset-0 transition-all duration-500 ${
+                  activePanel === 'how' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                }`}
+              >
+                <div className="inline-block px-4 py-1 rounded-full bg-amber-700/10 mb-6">
+                  <span className="text-xs font-semibold tracking-widest text-amber-700 uppercase">How we do it</span>
                 </div>
-
-                {/* Mission - Innermost (moving on orbit) */}
-                <div
-                  className="absolute z-30"
-                  style={{
-                    left: '50%',
-                    bottom: '-55px',
-                    width: '0px',
-                    height: '0px',
-                    transform: `rotate(${missionRotation}deg)`,
-                    opacity: missionOpacity,
-                    transition: 'opacity 0.3s ease-in-out',
-                  }}
+                <h3 className="text-3xl font-light text-gray-900 mb-4 leading-tight">
+                  Global reach. In-house brains. Relentless speed.
+                </h3>
+                <p className="text-base text-gray-600 font-light leading-relaxed">
+                  We combine a global footprint with deep in-house expertise and rapid execution — allowing us to adapt and deploy solutions tailored to each client.
+                </p>
+                <button
+                  onClick={resetPanel}
+                  className="mt-6 text-sm font-medium text-amber-700 hover:opacity-70 transition-opacity"
                 >
-                  <div
+                  ← Back
+                </button>
+              </motion.div>
+
+              {/* What Panel */}
+              <motion.div
+                className={`absolute inset-0 transition-all duration-500 ${
+                  activePanel === 'what' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                }`}
+              >
+                <div className="inline-block px-4 py-1 rounded-full bg-amber-700/10 mb-6">
+                  <span className="text-xs font-semibold tracking-widest text-amber-700 uppercase">What we build</span>
+                </div>
+                <h3 className="text-3xl font-light text-gray-900 mb-4 leading-tight">
+                  Plug-and-play AI agents for the workflows that matter.
+                </h3>
+                <p className="text-base text-gray-600 font-light leading-relaxed">
+                  Domain-specific AI agents that automate critical workflows for startups and SMEs — freeing teams to focus on high-value growth.
+                </p>
+                <button
+                  onClick={resetPanel}
+                  className="mt-6 text-sm font-medium text-amber-700 hover:opacity-70 transition-opacity"
+                >
+                  ← Back
+                </button>
+              </motion.div>
+            </div>
+
+            {/* Right: Inverted Semicircle Orbital */}
+            <div className="relative flex justify-center">
+              <div className="relative w-96 h-48 overflow-hidden">
+                {/* Concentric circles as interactive arcs */}
+                <div className="relative w-96 h-96">
+                  {/* Outermost Arc - Why */}
+                  <motion.div
+                    onClick={() => showPanel('why')}
+                    className={`absolute rounded-full border-2 cursor-pointer transition-all duration-500 ${
+                      activePanel === 'why'
+                        ? 'border-amber-700/50'
+                        : 'border-gray-900/12 hover:border-gray-900/35'
+                    }`}
                     style={{
-                      position: 'absolute',
-                      left: '-50px',
-                      top: '-160px',
+                      width: '384px',
+                      height: '384px',
+                      top: '0px',
+                      left: '0px',
+                      background: activePanel === 'why' ? 'rgba(180, 83, 9, 0.05)' : 'transparent',
                     }}
-                    onMouseEnter={() => setHoveredBox('mission')}
-                    onMouseLeave={() => setHoveredBox(null)}
                   >
-                    <div
-                      className="px-4 py-2 rounded-full cursor-pointer transition-all duration-300"
-                      style={{
-                        background: 'rgba(221, 214, 254, 0.75)',
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
-                        border: '2px solid rgba(99, 102, 241, 0.3)',
-                        boxShadow: '0 8px 32px rgba(99, 102, 241, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
-                      }}
+                    <motion.div
+                      className={`absolute text-xs font-semibold tracking-widest uppercase transition-all duration-500 left-1/2 top-16 -translate-x-1/2 px-3 py-1 rounded-full ${
+                        activePanel === 'why'
+                          ? 'text-amber-700 bg-white/90'
+                          : 'text-gray-900/40 bg-white/70'
+                      }`}
                     >
-                      <svg width="70" height="16" viewBox="0 0 70 16" className="overflow-visible">
-                        <defs>
-                          <path id="missionCurve" d="M 0,10 Q 35,5 70,10" fill="none" />
-                        </defs>
-                        <text className="text-xs font-semibold fill-[#2D1B4E] uppercase tracking-wider" dominantBaseline="middle">
-                          <textPath href="#missionCurve" startOffset="50%" textAnchor="middle">
-                            Mission
-                          </textPath>
-                        </text>
-                      </svg>
-                    </div>
-                  </div>
+                      Why
+                    </motion.div>
+                  </motion.div>
+
+                  {/* Middle Arc - How */}
+                  <motion.div
+                    onClick={() => showPanel('how')}
+                    className={`absolute rounded-full border-2 cursor-pointer transition-all duration-500 ${
+                      activePanel === 'how'
+                        ? 'border-amber-700/50'
+                        : 'border-gray-900/12 hover:border-gray-900/35'
+                    }`}
+                    style={{
+                      width: '264px',
+                      height: '264px',
+                      top: '60px',
+                      left: '60px',
+                      background: activePanel === 'how' ? 'rgba(180, 83, 9, 0.05)' : 'transparent',
+                    }}
+                  >
+                    <motion.div
+                      className={`absolute text-xs font-semibold tracking-widest uppercase transition-all duration-500 left-1/2 top-10 -translate-x-1/2 px-3 py-1 rounded-full ${
+                        activePanel === 'how'
+                          ? 'text-amber-700 bg-white/90'
+                          : 'text-gray-900/40 bg-white/70'
+                      }`}
+                    >
+                      How
+                    </motion.div>
+                  </motion.div>
+
+                  {/* Innermost Arc - What */}
+                  <motion.div
+                    onClick={() => showPanel('what')}
+                    className={`absolute rounded-full border-2 cursor-pointer transition-all duration-500 ${
+                      activePanel === 'what'
+                        ? 'border-amber-700/50'
+                        : 'border-gray-900/12 hover:border-gray-900/35'
+                    }`}
+                    style={{
+                      width: '144px',
+                      height: '144px',
+                      top: '126px',
+                      left: '126px',
+                      background: activePanel === 'what' ? 'rgba(180, 83, 9, 0.1)' : 'rgba(17, 24, 39, 0.06)',
+                    }}
+                  >
+                    <motion.div
+                      className={`absolute text-xs font-semibold tracking-widest uppercase transition-all duration-500 left-1/2 top-6 -translate-x-1/2 px-3 py-1 rounded-full ${
+                        activePanel === 'what'
+                          ? 'text-amber-700 bg-white/90'
+                          : 'text-gray-900/40 bg-white/70'
+                      }`}
+                    >
+                      What
+                    </motion.div>
+                  </motion.div>
                 </div>
               </div>
             </div>
-          </motion.div>
-
-          {/* Lower Container - Content */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="bg-white rounded-xl overflow-hidden mb-12 relative"
-            style={{ minHeight: '400px' }}
-          >
-            {!selectedBox ? (
-              /* Default 3-column layout */
-              <div className="p-12">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  {/* Vision */}
-                  <div className="text-center">
-                    <h3 className="text-xl font-semibold text-[#6366F1] mb-4 uppercase tracking-wider">
-                      Vision
-                    </h3>
-                    <p className="text-[#2D1B4E]/70 leading-relaxed font-light">
-                      Lead the future where every enterprise harnesses AI to unlock unprecedented growth and innovation.
-                    </p>
-                  </div>
-
-                  {/* Purpose. */}
-                  <div className="text-center">
-                    <h3 className="text-xl font-semibold text-[#6366F1] mb-4 uppercase tracking-wider">
-                      Purpose
-                    </h3>
-                    <p className="text-[#2D1B4E]/70 leading-relaxed font-light">
-                      Transform the way enterprises operate by making AI accessible, reliable, and execution-ready.
-                    </p>
-                  </div>
-
-                  {/* Mission */}
-                  <div className="text-center">
-                    <h3 className="text-xl font-semibold text-[#6366F1] mb-4 uppercase tracking-wider">
-                      Mission
-                    </h3>
-                    <p className="text-[#2D1B4E]/70 leading-relaxed font-light">
-                      Empower businesses with AI-driven solutions that streamline operations and boost efficiency.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* Interactive layout when hovering */
-              <motion.div
-                key={selectedBox}
-                initial={{ x: '100%', opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: '100%', opacity: 0 }}
-                transition={{
-                  duration: 0.5,
-                  ease: [0.25, 0.1, 0.25, 1]
-                }}
-                className="flex h-full absolute inset-0 rounded-l-xl overflow-hidden"
-                style={{
-                  background: selectedBox === 'vision'
-                    ? 'rgba(99, 102, 241, 0.75)'
-                    : selectedBox === 'purpose'
-                    ? 'rgba(99, 102, 241, 0.85)'
-                    : 'rgba(99, 102, 241, 0.95)',
-                }}
-              >
-                {/* Text Description - 1/3 */}
-                <div className="w-1/3 p-12 flex flex-col justify-center">
-                  <h2 className="text-3xl font-bold text-white mb-6 uppercase tracking-wider">
-                    {selectedBox === 'vision' && 'Vision'}
-                    {selectedBox === 'purpose' && 'Purpose'}
-                    {selectedBox === 'mission' && 'Mission'}
-                  </h2>
-                  <p className="text-white/90 leading-relaxed text-lg font-light">
-                    {selectedBox === 'vision' &&
-                      'Lead the future where every enterprise harnesses AI to unlock unprecedented growth and innovation. We envision a world where artificial intelligence seamlessly integrates with business operations.'}
-                    {selectedBox === 'purpose' &&
-                      'Transform the way enterprises operate by making AI accessible, reliable, and execution-ready. Our purpose is to bridge the gap between cutting-edge AI technology and practical business applications.'}
-                    {selectedBox === 'mission' &&
-                      'Empower businesses with AI-driven solutions that streamline operations and boost efficiency. We are committed to delivering tools that make a tangible difference in day-to-day operations.'}
-                  </p>
-                </div>
-
-                {/* Image Frame - 2/3 */}
-                <div className="w-2/3 bg-white flex items-center justify-center p-12">
-                  <div className="w-full h-full border-4 border-[#6366F1]/20 rounded-lg flex items-center justify-center">
-                    <p className="text-[#2D1B4E]/30 text-xl font-light">
-                      Image Placeholder
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </motion.div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* Footer Section */}
-      <footer className="pt-20 pb-10 px-6 border-t border-[#6366F1]/10 bg-gradient-to-b from-white to-[#faf5ff]">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
-          <div className="text-center md:text-left">
-            <img src="/sia-logo.png" alt="SIA" className="h-25 w-auto mb-2" />
-            <p className="text-[#2D1B4E]/60 text-sm tracking-wide font-light">
-              Execution-first AI for the Enterprise.
+      {/* SECTION 2: THE PROBLEM */}
+      <section className="py-32 px-16 bg-gradient-to-b from-gray-900 to-purple-950 relative overflow-hidden">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle at 30% 50%, rgba(168, 107, 101, 0.15) 0%, transparent 60%)',
+          }}
+        />
+        <div className="max-w-4xl mx-auto relative z-10">
+          <h2 className="text-5xl font-light text-white mb-8 leading-tight">
+            The giants are <em className="italic text-amber-700">pulling ahead.</em>
+          </h2>
+          <p className="text-lg text-white/70 mb-6 font-light leading-relaxed">
+            The largest companies in the world are using AI to move faster, decide smarter, and widen the gap every quarter.
+          </p>
+          <p className="text-lg text-white/70 mb-8 font-light leading-relaxed">
+            Meanwhile, growing businesses are left choosing between expensive consultants, half-built tools, and doing everything manually.
+          </p>
+          <div className="text-xl text-white font-medium pl-6 border-l-4 border-amber-700 mt-12">
+            We started OPSERA because we believe that's wrong.
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 3: THE ANSWER */}
+      <section className="py-32 px-16 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-5xl font-light text-gray-900 mb-6 leading-tight">
+              We exist to <em className="italic text-amber-700">level the field.</em>
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto font-light leading-relaxed">
+              Plug-and-play AI agents that automate critical workflows, so your team stops drowning in operations and starts focusing on growth.
             </p>
           </div>
 
-          <div className="flex gap-8 text-[#2D1B4E]/70 text-sm font-light tracking-wider">
-            {["Privacy", "Terms", "Cookies"].map((link) => (
-              <a key={link} href="#" className="relative group overflow-hidden hover:text-[#6366F1] transition-colors">
-                {link}
-                <span className="absolute left-0 bottom-0 w-full h-[1px] bg-[#6366F1] -translate-x-full transition-transform duration-300 group-hover:translate-x-0" />
-              </a>
+          <div className="grid grid-cols-3 gap-8">
+            {[
+              {
+                icon: '⚡',
+                title: '30 days, not 6 months',
+                description: 'No drawn-out implementation timelines. No enterprise-only pricing. No 40-page SOW before you see results.',
+                bg: 'bg-amber-700/10',
+                color: 'text-amber-700',
+              },
+              {
+                icon: '⚙️',
+                title: 'Tailored to how you run',
+                description: "We don't hand you a platform and wish you luck. We deploy solutions built for how your business actually operates.",
+                bg: 'bg-purple-600/10',
+                color: 'text-purple-600',
+              },
+              {
+                icon: '🎯',
+                title: 'Free your best people',
+                description: 'Our agents handle the workflows that quietly eat your team\'s time — sales, reporting, follow-ups, internal ops.',
+                bg: 'bg-teal-600/10',
+                color: 'text-teal-600',
+              },
+            ].map((card, idx) => (
+              <motion.div
+                key={idx}
+                className="p-11 rounded-3xl border border-gray-200 bg-gradient-to-br from-amber-50 to-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+              >
+                <div className={`w-14 h-14 rounded-2xl ${card.bg} ${card.color} flex items-center justify-center text-2xl mb-6`}>
+                  {card.icon}
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">{card.title}</h3>
+                <p className="text-base text-gray-700 font-light leading-relaxed">{card.description}</p>
+              </motion.div>
             ))}
           </div>
         </div>
+      </section>
+
+      {/* SECTION 4: HOW WE WORK */}
+      <section className="py-32 px-16 bg-gradient-to-b from-amber-50 to-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-5xl font-light text-gray-900 mb-6 leading-tight">
+              How it <em className="italic text-amber-700">works</em>
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto font-light leading-relaxed">
+              No 40-page SOW. No six-month timeline. Just a clear path from problem to production.
+            </p>
+          </div>
+
+          <div className="relative">
+            {/* Connecting Line */}
+            <div className="absolute top-10 left-20 right-20 h-0.5 bg-gradient-to-r from-amber-700 via-purple-600/30 to-amber-700 z-0" />
+
+            {/* Steps */}
+            <div className="flex gap-8 relative z-10">
+              {[
+                {
+                  number: '1',
+                  title: "You tell us what's slowing you down",
+                  description: 'We dig into your workflows, team structure, and the bottlenecks quietly eating your time.',
+                },
+                {
+                  number: '2',
+                  title: 'We build around how you actually run',
+                  description: "No off-the-shelf platform. We design and deploy an AI agent tailored to your real operations.",
+                },
+                {
+                  number: '3',
+                  title: "You're live in weeks",
+                  description:
+                    'Your agent is running, your team is freed up, and we keep iterating as your business evolves.',
+                },
+              ].map((step, idx) => (
+                <motion.div
+                  key={idx}
+                  className="flex-1 text-center px-6 hover:-translate-y-1 transition-all duration-300"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <motion.div className="w-20 h-20 rounded-full border-2 border-amber-700/25 flex items-center justify-center mx-auto mb-7 bg-white hover:border-amber-700 hover:shadow-lg hover:shadow-amber-700/15 transition-all duration-300">
+                    <span className="text-3xl font-light text-amber-700">{step.number}</span>
+                  </motion.div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-3">{step.title}</h4>
+                  <p className="text-base text-gray-700 font-light leading-relaxed">{step.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 5: VISION & MISSION */}
+      <section className="py-32 px-16 bg-gradient-to-b from-gray-900 to-purple-950 relative overflow-hidden">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle at right, rgba(201, 149, 43, 0.08) 0%, transparent 60%)',
+          }}
+        />
+        <div className="max-w-4xl mx-auto relative z-10">
+          <div className="grid grid-cols-2 gap-12">
+            {[
+              {
+                label: 'Vision',
+                text: 'A future where businesses of any size can act with the intelligence, intent, and speed once reserved for the few.',
+              },
+              {
+                label: 'Mission',
+                text: "To help growing businesses grow faster and operate smarter — by making tomorrow's technologies accessible today.",
+              },
+            ].map((item, idx) => (
+              <motion.div
+                key={idx}
+                className="p-12 rounded-3xl border border-white/8 bg-white/3 backdrop-blur-xl hover:bg-white/5 transition-all duration-300"
+              >
+                <div className="text-xs font-semibold tracking-widest text-amber-700 uppercase mb-6">{item.label}</div>
+                <h3 className="text-2xl font-light text-white leading-relaxed">{item.text}</h3>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 6: CTA */}
+      <section className="py-40 px-16 bg-gradient-to-b from-white to-amber-50 text-center">
+        <h2 className="text-6xl font-light text-gray-900 mb-6 leading-tight">
+          Built for those who <em className="italic text-amber-700">punch above their weight.</em>
+        </h2>
+        <p className="text-xl text-gray-600 mb-12 font-light">If that sounds like you, we should talk.</p>
+        <motion.a
+          href="#"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="inline-block px-12 py-5 bg-gradient-to-r from-amber-700 to-amber-600 text-white text-lg font-semibold rounded-full hover:shadow-lg hover:shadow-amber-700/40 transition-all"
+        >
+          Book a Demo →
+        </motion.a>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="py-10 px-16 border-t border-gray-200 flex justify-between items-center text-sm text-gray-600">
+        <div>
+          <span className="text-lg font-bold text-gray-900">
+            OPS<span className="text-amber-700">ERA</span>
+          </span>
+          <span className="ml-4">Intelligence that levels the field.</span>
+        </div>
+        <div className="flex gap-8">
+          <a href="#" className="hover:text-gray-900 transition-colors">
+            Privacy
+          </a>
+          <a href="#" className="hover:text-gray-900 transition-colors">
+            Terms
+          </a>
+          <a href="#" className="hover:text-gray-900 transition-colors">
+            Cookies
+          </a>
 
         <div className="mt-20 text-center text-[#2D1B4E]/20 text-xs tracking-widest">
           © {new Date().getFullYear()} SIA INC. ALL RIGHTS RESERVED.
