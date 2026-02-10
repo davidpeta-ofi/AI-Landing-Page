@@ -646,36 +646,34 @@ function OrbitingProduct({
       </motion.div>
 
       {/* Hover info card */}
-      
-<AnimatePresence>
-  {isHovered && (
-    <motion.div
-      className="absolute left-full ml-4 top-1/2 -translate-y-1/2 w-64 p-4 rounded-xl"
-      style={{
-        background: 'rgba(10, 0, 20, 0.95)',
-        border: `1px solid ${product.color}40`,
-        backdropFilter: 'blur(20px)',
-        boxShadow: `0 10px 40px ${product.color}20`,
-      }}
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -10 }}
-      transition={{ duration: 0.2 }}
-    >
-      <h4 className="text-white font-semibold text-sm mb-1">{product.name}</h4>
-      <p className="text-white/50 text-xs mb-3">{product.tagline}</p>
-      <div className="flex items-center justify-between">
-        <span className="text-white font-bold text-lg">{product.price}</span>
-        <span className="text-xs" style={{ color: product.color }}>
-          Click to learn more →
-        </span>
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
+      <AnimatePresence>
+        {isHovered && (
+          <motion.div
+            className="absolute left-full ml-4 top-1/2 -translate-y-1/2 w-64 p-4 rounded-xl pointer-events-none"
+            style={{
+              background: 'rgba(10, 0, 20, 0.95)',
+              border: `1px solid ${product.color}40`,
+              backdropFilter: 'blur(20px)',
+              boxShadow: `0 10px 40px ${product.color}20`,
+            }}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <h4 className="text-white font-semibold text-sm mb-1">{product.name}</h4>
+            <p className="text-white/50 text-xs mb-3">{product.tagline}</p>
+            <div className="flex items-center justify-between">
+              <span className="text-white font-bold text-lg">{product.price}</span>
+              <span className="text-xs" style={{ color: product.color }}>Click to learn more →</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
+
 
 const ProductDetailsSection = forwardRef<
   HTMLDivElement,
@@ -707,7 +705,7 @@ const ProductDetailsSection = forwardRef<
         >
           <div className="grid grid-cols-3 gap-14 items-center">
             <div className="col-span-1">
-           <h2 className="text-4xl font-light text-white mb-6 text-center">
+             <h2 className="text-4xl font-light text-gray-900 mb-6 text-center">
   {product.name}
 </h2>
 
