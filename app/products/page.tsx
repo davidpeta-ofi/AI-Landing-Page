@@ -184,22 +184,10 @@ export default function ProductsPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   const [shouldScrollToDetails, setShouldScrollToDetails] = useState(false);
-  const [navVisible, setNavVisible] = useState(true);
   const [hoveredProduct, setHoveredProduct] = useState<number | null>(null);
   const productDetailsRef = useRef<HTMLDivElement>(null);
-  const lastScrollY = useRef(0);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentY = window.scrollY;
-      setNavVisible(currentY < lastScrollY.current || currentY < 10);
-      lastScrollY.current = currentY;
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -463,8 +451,8 @@ export default function ProductsPage() {
               {filteredProducts.map((product, index) => {
                 const angle = (index / filteredProducts.length) * Math.PI * 2;
                 const radius = 250;
-                const x = Math.cos(angle) * radius;
-                const y = Math.sin(angle) * radius;
+                const x = Math.round(Math.cos(angle) * radius);
+                const y = Math.round(Math.sin(angle) * radius);
 
                 return (
                   <OrbitingProduct
@@ -489,8 +477,8 @@ export default function ProductsPage() {
                 {filteredProducts.map((product, index) => {
                   const angle = (index / filteredProducts.length) * Math.PI * 2;
                   const radius = 250;
-                  const x = Math.cos(angle) * radius;
-                  const y = Math.sin(angle) * radius;
+                  const x = Math.round(Math.cos(angle) * radius);
+                  const y = Math.round(Math.sin(angle) * radius);
                   
                   return (
                     <motion.line
