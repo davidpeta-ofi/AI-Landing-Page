@@ -34,9 +34,19 @@ export default function AboutPage() {
 
   return (
     <div className="bg-gradient-to-b from-white via-[#faf5ff] to-white min-h-screen w-full overflow-x-hidden">
+      {/* Hover zone to reveal navbar */}
+      <div
+        className="fixed top-0 left-0 right-0 h-16 z-50"
+        onMouseEnter={() => setNavVisible(true)}
+      />
       {/* Header/Navbar */}
       <header
         className="fixed top-0 left-0 right-0 z-50 px-8 h-25"
+        onMouseEnter={() => setNavVisible(true)}
+        onMouseLeave={() => {
+          const currentY = window.scrollY;
+          if (currentY > 10) setNavVisible(false);
+        }}
         style={{
           background: 'rgba(13, 0, 21, 0.85)',
           backdropFilter: 'blur(16px)',

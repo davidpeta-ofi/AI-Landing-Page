@@ -148,6 +148,7 @@ const aiAgentsData = [
 
 export default function OpseraLanding() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const isSnapping = useRef(false);
   const [wordIndex, setWordIndex] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null);
   const [selectedAgent, setSelectedAgent] = useState<string | null>('argo');
@@ -200,6 +201,59 @@ export default function OpseraLanding() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95]);
 
+  // Snap scroll between all consecutive sections
+  // For sections taller than the viewport, allow normal scrolling within them
+  // and only snap when the user reaches the top/bottom edge of that section
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (isSnapping.current) {
+        e.preventDefault();
+        return;
+      }
+
+      const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-snap-section]'));
+      if (sections.length < 2) return;
+
+      const viewportH = window.innerHeight;
+      const threshold = 5; // px tolerance for edge detection
+
+      // Find which section the user is currently viewing
+      const currentIndex = sections.findIndex((section) => {
+        const rect = section.getBoundingClientRect();
+        return rect.top > -rect.height + viewportH * 0.5 && rect.top < viewportH * 0.5;
+      });
+
+      if (currentIndex === -1) return;
+
+      const rect = sections[currentIndex].getBoundingClientRect();
+      const sectionFitsViewport = rect.height <= viewportH + threshold;
+
+      // If section fits in viewport, always snap
+      // If section is taller, only snap when at the edge
+      const atBottom = rect.bottom <= viewportH + threshold;
+      const atTop = rect.top >= -threshold;
+
+      if (e.deltaY > 0 && currentIndex < sections.length - 1) {
+        if (sectionFitsViewport || atBottom) {
+          e.preventDefault();
+          isSnapping.current = true;
+          sections[currentIndex + 1].scrollIntoView({ behavior: 'smooth' });
+          setTimeout(() => { isSnapping.current = false; }, 800);
+        }
+      } else if (e.deltaY < 0 && currentIndex > 0) {
+        if (sectionFitsViewport || atTop) {
+          e.preventDefault();
+          isSnapping.current = true;
+          sections[currentIndex - 1].scrollIntoView({ behavior: 'smooth', block: 'end' });
+          setTimeout(() => { isSnapping.current = false; }, 800);
+        }
+      }
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, []);
+
   // Rotate words
   useEffect(() => {
     const interval = setInterval(() => {
@@ -216,9 +270,19 @@ export default function OpseraLanding() {
 
   return (
     <div ref={containerRef} className="bg-[#0d0015] min-h-screen w-full overflow-x-hidden">
+      {/* Hover zone to reveal navbar */}
+      <div
+        className="fixed top-0 left-0 right-0 h-16 z-50"
+        onMouseEnter={() => setNavVisible(true)}
+      />
       {/* Header/Navbar */}
       <header
         className="fixed top-0 left-0 right-0 z-50 px-8 h-25"
+        onMouseEnter={() => setNavVisible(true)}
+        onMouseLeave={() => {
+          const currentY = window.scrollY;
+          if (currentY > 10) setNavVisible(false);
+        }}
         style={{
           background: 'rgba(13, 0, 21, 0.85)',
           backdropFilter: 'blur(16px)',
@@ -261,6 +325,7 @@ export default function OpseraLanding() {
 
       {/* Hero Section with Shader Background */}
       <section
+        data-snap-section
         className="relative min-h-screen flex items-center overflow-hidden"
       >
         {/* Shader Animation Background - Full opacity */}
@@ -468,7 +533,7 @@ export default function OpseraLanding() {
       </section>
 
       {/* Products Section - Built on Reality */}
-      <section className="relative py-24 px-6 overflow-hidden min-h-[700px]" style={{ background: "linear-gradient(180deg, #1a0a2e 0%, #2D1B4E 50%, #3d2a5f 100%)" }}>
+      <section data-snap-section className="relative py-24 px-6 overflow-hidden min-h-[700px]" style={{ background: "linear-gradient(180deg, #1a0a2e 0%, #2D1B4E 50%, #3d2a5f 100%)" }}>
         {/* Purple glow effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#A855F7]/15 rounded-full blur-[150px]" />
@@ -603,7 +668,7 @@ export default function OpseraLanding() {
       </section>
 
       {/* AI Agents Showcase Section - New Launches */}
-      <section className="relative py-32 px-6 overflow-hidden" style={{ background: "linear-gradient(180deg, #3d2a5f 0%, #2D1B4E 15%, #2D1B4E 100%)" }}>
+      <section data-snap-section className="relative py-32 px-6 overflow-hidden" style={{ background: "linear-gradient(180deg, #3d2a5f 0%, #2D1B4E 15%, #2D1B4E 100%)" }}>
 
         {/* Purple glow effects */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -897,7 +962,7 @@ export default function OpseraLanding() {
       <div className="h-64" style={{ background: "linear-gradient(to bottom, #2D1B4E 0%, #3d2a5f 15%, #6b4e9b 35%, #b8a5d4 55%, #e8e0f0 75%, white 100%)" }} />
 
       {/* Market Positioning Section - The Intelligence Matrix */}
-      <section className="relative py-32 px-6 bg-gradient-to-b from-white to-[#f5f0ff]">
+      <section data-snap-section className="relative py-32 px-6 bg-gradient-to-b from-white to-[#f5f0ff]">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -1076,7 +1141,7 @@ export default function OpseraLanding() {
       <div className="h-64" style={{ background: "linear-gradient(to bottom, #f5f0ff 0%, #e0d5f0 20%, #b8a5d4 40%, #6b4e9b 65%, #3d2a5f 80%, #2D1B4E 100%)" }} />
 
       {/* Technology Stack Section - 3D Platform with Bars */}
-      <section className="relative py-32 px-6 bg-[#2D1B4E] overflow-hidden">
+      <section data-snap-section className="relative py-32 px-6 bg-[#2D1B4E] overflow-hidden">
         <div className="max-w-6xl mx-auto relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -1218,7 +1283,7 @@ export default function OpseraLanding() {
       </section>
 
       {/* The Grand Finale - CTA Section */}
-      <section id="cta" className="relative py-48 px-6 bg-gradient-to-b from-[#2D1B4E] via-[#3d2a5f] to-[#2D1B4E] overflow-hidden">
+      <section data-snap-section id="cta" className="relative py-48 px-6 bg-gradient-to-b from-[#2D1B4E] via-[#3d2a5f] to-[#2D1B4E] overflow-hidden">
         {/* Energy Orb Background Effect */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-[#E8B84A] to-[#E8A87C] rounded-full blur-[120px] opacity-20 animate-pulse pointer-events-none" />
 
@@ -1402,7 +1467,7 @@ export default function OpseraLanding() {
       </section>
 
       {/* Footer Section */}
-      <footer className="bg-[#2D1B4E] pt-20 pb-10 px-6 border-t border-white/5">
+      <footer data-snap-section className="bg-[#2D1B4E] pt-20 pb-10 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
 
           {/* Left: Logo & Tagline */}
