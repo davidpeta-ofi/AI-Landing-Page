@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -33,21 +34,21 @@ const Navbar = () => {
       className="text-white hover:text-gray-300 transition-colors duration-200 text-base font-medium"
     >
       Home
-    </a>
+    </Link>
 
     <a
       href="products"
       className="text-gray-300 hover:text-white transition-colors duration-200 text-base font-medium"
     >
       Products
-    </a>
+    </Link>
 
     <a
       href="about"
       className="text-gray-300 hover:text-white transition-colors duration-200 text-base font-medium"
     >
       About Us
-    </a>
+    </Link>
   </div>
 
   {/* CTA Button */}
@@ -94,29 +95,29 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden bg-[#0a0a1a] border-t border-gray-800">
           <div className="px-6 py-4 space-y-3">
-            <a
-              href="#home"
+            <Link
+              href="/"
               className="block text-white hover:text-gray-300 text-base font-medium"
               onClick={() => setIsOpen(false)}
             >
               Home
-            </a>
+            </Link>
 
-            <a
-              href="#products"
+            <Link
+              href="/products"
               className="block text-gray-300 hover:text-white text-base font-medium"
               onClick={() => setIsOpen(false)}
             >
               Products
-            </a>
+            </Link>
 
-            <a
-              href="#about"
+            <Link
+              href="/about"
               className="block text-gray-300 hover:text-white text-base font-medium"
               onClick={() => setIsOpen(false)}
             >
               About Us
-            </a>
+            </Link>
 
             <button
               onClick={() => setIsOpen(false)}
