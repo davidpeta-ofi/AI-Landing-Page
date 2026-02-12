@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import Chatbot from '@/components/ui/chatbot';
 import { useState, useEffect, useRef } from 'react';
+import Navbar from '@/components/ui/Navbar';
+import Footer from '@/components/ui/Footer';
 
 const tetrisPieces = [
   {
@@ -665,46 +667,8 @@ export default function AboutPage() {
   };
 
   return (
-    <div ref={containerRef} className="min-h-screen" style={{ background: 'linear-gradient(160deg, #12041a 0%, #1e0835 30%, #2a0d4a 55%, #160228 80%, #0c0118 100%)' }}>
-      <header
-        className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 h-16 md:h-20"
-        style={{
-          background: 'rgba(13, 0, 21, 0.85)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-          transform: navVisible ? 'translateY(0)' : 'translateY(-100%)',
-          transition: 'transform 0.3s ease-in-out',
-        }}
-      >
-        <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
-          <a href="/" className="flex items-center h-full">
-            <img src="/sia-logo.png" alt="SIA" className="h-full py-3 w-auto brightness-0 invert" />
-          </a>
-
-          <nav className="flex items-center gap-4 md:gap-8">
-            <a href="/" className="hidden sm:block text-white/60 hover:text-white transition-colors text-sm font-medium tracking-wide">
-              Home
-            </a>
-            <a href="/products" className="hidden sm:block text-white/60 hover:text-white transition-colors text-sm font-medium tracking-wide">
-              Products
-            </a>
-            <a href="/about" className="hidden sm:block text-white hover:text-white transition-colors text-sm font-medium tracking-wide">
-              About Us
-            </a>
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => {
-                document.getElementById('cta')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="text-[#2D1B4E] text-sm font-semibold px-4 py-2 rounded-lg bg-gradient-to-r from-[#E8B84A] to-[#E8A87C] hover:shadow-[0_0_20px_rgba(232,184,74,0.3)] transition-all"
-            >
-              Get Started
-            </motion.button>
-          </nav>
-        </div>
-      </header>
+    <div ref={containerRef} className="min-h-screen bg-white">
+      <Navbar/>
 
       <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-6 md:px-10 lg:px-16 min-h-screen flex items-center" data-snap>
         <motion.div
@@ -1435,26 +1399,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <footer className="py-8 md:py-10 px-6 md:px-10 lg:px-16 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-white/60">
-        <div className="flex items-center">
-          <img src="/sia-logo.png" alt="SIA" className="h-10 w-auto brightness-0 invert" />
-        </div>
-        <div className="flex gap-6 md:gap-8">
-          <a href="#" className="hover:text-white transition-colors">
-            Privacy
-          </a>
-          <a href="#" className="hover:text-white transition-colors">
-            Terms
-          </a>
-          <a href="#" className="hover:text-white transition-colors">
-            Cookies
-          </a>
-        </div>
-
-        <div className="text-center text-white/10 text-xs tracking-widest">
-          © {new Date().getFullYear()} SIA INC. ALL RIGHTS RESERVED.
-        </div>
-      </footer>
+      <Footer />
       <Chatbot />
     </div>
   );

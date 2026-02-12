@@ -4,8 +4,12 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import { useState, useEffect, useRef, forwardRef } from 'react';
 import { MoveRight, Sparkles, Zap, Target, Users, TrendingUp, BarChart3, Bot, Check, X } from 'lucide-react';
 import Chatbot from '@/components/ui/chatbot';
+import Navbar from '@/components/ui/Navbar';
+import Footer from '@/components/ui/Footer';
+import WaitlistSection from "@/components/ui/WaitList";
+import BookADemo from "@/components/ui/BookaDemo";
 
-const dynamicWords = ["marketing", "hr", "sales", "advertising", "job postings", "lead generation"];
+const dynamicWords = ["Marketing", "HR", "Sales", "Advertising", "Job Postings", "Lead Generation"];
 
 const categories = [
   { id: 'category1', label: 'Marketing', color: '#A855F7' },
@@ -17,7 +21,7 @@ const getBrandName = (category: string): string => {
   switch (category) {
     case 'category1': return 'Mark';
     case 'category2': return 'Consuelo';
-    case 'category3': return 'Argo';
+    case 'category3': return 'Argeo';
     default: return 'Our Product';
   }
 };
@@ -99,246 +103,75 @@ const getCategoryRobot = (category: string, size = 80) => {
 const products = [
   {
     id: 1, category: 'category1', icon: Sparkles, color: '#A855F7', colorIntensity: 0.4,
-    name: 'Content & Social Media Agent', tagline: 'Spot trends early for engagement-elevating content creation',
-    description: 'Make best use of trends, get editor hints on brand voice and lift your engagement before publishing',
-    features: [ {
-      title: 'Engagement Predictor​',
-      description: 'ML model forecasts clicks, likes, and shares; choose the slot with the highest projected reach.​.'
-    },
-      {
-      title: 'Trend Radar',
-      description: 'Streams top hashtags, search spikes, and competitor chatter into one panel so you’re always on-message.​'
-    },
-    {
-      title: 'Unified Campaign Dashboard',
-      description: 'Real-time view of spend, reach, and conversions across all channels; red-flag alerts for under-performers.​​'
-    },
-      {
-      title: 'AI Content Coach',
-      description: 'In-editor hints on tone, CTA, length, and brand voice to lift engagement before you hit Publish.'
-    }],
+    name: 'Content & Social Media Agent', tagline: 'Create and manage engaging social content',
+    description: 'An AI-powered agent that generates, schedules, and optimizes social media content across all major platforms. From caption writing to content calendar management.',
+    features: ['Content Generation', 'Social Scheduling', 'Engagement Analytics', 'Brand Voice Consistency'],
     price: '$499/mo',
+    ctaType: 'demo',
   },
   {
     id: 2, category: 'category1', icon: Target, color: '#A855F7', colorIntensity: 0.6,
-    name: 'Advertising Agent', tagline: 'Manage, schedule and generate your campaigns the smart way',
-    description: 'Smart recommendations guide for intelligent multiplatform posting',
-    features: [
-      {
-        title: 'Unifies Campaign Dashboard',
-        description: 'Real-time view of spend, reach, and conversions across all channels; red-flag alerts for under-performerss.'
-      },
-      {
-        title: 'Content Generator',
-        description: 'Generate multi-platform posts (text, image prompts, hashtags) in secondss.'
-      },
-      {
-        title: 'Smart Scheduler',
-        description: 'Auto-drops approved posts into each platform’s best-time window and fires reminders to stakeholders.'
-      }
-    ],
+    name: 'Advertising Agent', tagline: 'Optimize ad campaigns and maximize ROI',
+    description: 'Intelligent ad management automation that creates, tests, and optimizes campaigns across Google Ads, Meta, and LinkedIn. Real-time bid optimization and audience targeting.',
+    features: ['Campaign Automation', 'Bid Optimization', 'A/B Testing', 'ROI Tracking'],
     price: '$699/mo',
+    ctaType: 'waitlist',
   },
   {
     id: 3, category: 'category1', icon: Zap, color: '#A855F7', colorIntensity: 0.8,
     name: 'Full Marketing Agent', tagline: 'Complete marketing automation suite',
-    description: 'The complete Mark solution combining all of our best for content and marketing. Unified platform for all your marketing needs with  AI automation.',
-    features: [
-      {
-        title: 'Trend Radar',
-        description: 'Streams top hashtags, search spikes, and competitor chatter into one panel so you’re always on-message.'
-      },
-      {
-        title: 'AI Content Coach',
-        description: 'In-editor hints on tone, CTA, length, and brand voice to lift engagement before you hit Publish.'
-      },
-      {
-        title: 'Content Generator',
-        description: 'Generate multi-platform posts (text, image prompts, hashtags) in seconds.'
-      },
-      {
-        title: 'Campaign Automation',
-        description: 'Automatically schedule and publish content across multiple platforms based on optimal timing and audience insights.'
-      },
-      {
-        title: 'Smart Scheduler',
-        description: 'Auto-drops approved posts into each platform’s best-time window and fires reminders to stakeholders.'
-      },
-      {
-        title: 'Unified Campaign Dashboard',
-        description: 'Real-time view of spend, reach, and conversions across all channels; red-flag alerts for under-performerss.'
-      }
-
-    ],
+    description: 'The complete Mark solution combining content creation, ad management, and analytics. Unified platform for all your marketing needs with full AI automation.',
+    features: ['Content Generation', 'Ad Optimization', 'Lead Scoring', 'Performance Analytics'],
     price: '$1,299/mo',
+    ctaType: 'waitlist',
   },
   {
     id: 4, category: 'category2', icon: Users, color: '#E8B84A', colorIntensity: 0.4,
-    name: 'CV Screening & Hiring Analytics', tagline: 'Evaluate candidates by your most important criteria, get funnel insights from application to offer outcome',
-    description: 'Automate the candidate evaluation bias-free with instant fit scoring. Track the health of your hiring funnel from CV to signing.',
-    features: [
-      {
-        title: 'Resume Parsing + Fit Scoring',
-        description: 'Converts every CV into structured fields and the AI assigns an instant match score.'
-      },
-      {
-        title: 'Smart Filter Dashboard',
-        description: 'Slice the pipeline by skills, seniority, DEI mix, or location in one click; short-list in seconds.'
-      },
-      {
-        title: 'Real-time Hiring Analytics',
-        description: 'Track hiring funnel health, time-to-hire, and status alerts in real-time.'
-      }
-    ],
+    name: 'Candidate Screening', tagline: 'Intelligent resume screening and evaluation',
+    description: 'Automate resume review and candidate qualification. AI evaluates CVs against job requirements, identifies top candidates, and flags red flags in seconds.',
+    features: ['Resume Parsing', 'Skill Matching', 'Qualification Scoring', 'Bias-free Evaluation'],
     price: '$399/mo',
+    ctaType: 'demo',
   },
   {
     id: 5, category: 'category2', icon: BarChart3, color: '#E8B84A', colorIntensity: 0.6,
-    name: 'Tech-Test Grader', tagline: 'Automate candidate coding and case study submissions evaluation',
-    description: 'Generate and automatically grade coding tests and case studies with AI. Get unbiased skill assessments and feedback for every candidate.',
-    features: [
-      {
-        title: 'Test Grading',
-        description: 'Automatically grade coding tests and case studies with AI. Evaluates coding or case-study submissions, logs scores, and flags answers.'
-      },
-      {
-        title: 'Interview Question Generator',
-        description: 'Builds role-specific questions (soft + hard) and emails them to the interviewer automatically.'
-      },
-      {
-        title: 'AI Soft-Skills Tester',
-        description: 'Voice & text assessments scored automatically and added to fit profile.'
-      }
-    ],
+    name: 'Talent Acquisition', tagline: 'Automated job description generation',
+    description: 'Generate compelling and SEO-optimized job descriptions in minutes. AI creates role-specific descriptions, requirements, and benefits tailored to your company culture.',
+    features: ['Description Generation', 'SEO Optimization', 'Salary Recommendation', 'Culture Matching'],
     price: '$299/mo',
+    ctaType: 'waitlist',
   },
   {
     id: 6, category: 'category2', icon: Bot, color: '#E8B84A', colorIntensity: 0.8,
     name: 'Full HR Agent', tagline: 'Comprehensive HR automation platform',
-    description: 'The complete Consuelo solution combining CV screening and candidate engagement. End-to-end recruitment and HR automation in one platform.',
-    features: [
-      {
-        title: 'Resume Parsing + Fit Scoring',
-        description: 'Converts every CV into structured fields and the AI assigns an instant match score.'
-      },
-      {
-        title: 'Smart Filter Dashboard',
-        description: 'Slice the pipeline by skills, seniority, DEI mix, or location in one click; short-list in seconds.'
-      },
-      {
-        title: 'Real-time Hiring Analytics',
-        description: 'Track hiring funnel health, time-to-hire, and status alerts in real-time.'
-      },
-      {
-        title: 'Test Grading',
-        description: 'Automatically grade coding tests and case studies with AI. Evaluates coding or case-study submissions, logs scores, and flags answers.'
-      },
-      {
-        title: 'Interview Question Generator',
-        description: 'Builds role-specific questions (soft + hard) and emails them to the interviewer automatically.'
-      },
-      {
-        title: 'AI Soft-Skills Tester',
-        description: 'Voice & text assessments scored automatically and added to fit profile.'
-      }
-    ],
+    description: 'The complete Consuelo solution combining CV screening, job creation, and candidate engagement. End-to-end recruitment and HR automation in one platform.',
+    features: ['Resume Screening', 'Job Description', 'Candidate Engagement', 'Analytics Dashboard'],
     price: '$899/mo',
+    ctaType: 'waitlist',
   },
   {
     id: 7, category: 'category3', icon: Target, color: '#06B6D4', colorIntensity: 0.4,
-    name: 'Lead Generation and Scoring', tagline: 'AI-powered lead identification and scoring',
-    description: 'Discover and qualify hot leads while ML model calculates probability-to-land for each prospect.',
-    features: [
-      {
-        title: 'Lead Generation',
-        description: 'One click lead generation to find the most comparable Leads to current offerings.'
-      },
-      {
-        title: 'Product Matching',
-        description: 'Scores and reasons the need prospect’s need of your product.'
-      },
-      {
-        title: 'Machine Learning',
-        description: 'Machine learning priorities tasks based on historical data and best practices and calculates real time probability to land.'
-      },
-      {
-        title: 'Self-Learning Loop',
-        description: 'Every win/lose feeds the model, so targeting and messaging get sharper daily.​'
-      },
-      {
-        title: 'Manager Dashboard',
-        description: 'Real time sales analytics for sales managers to understand pipeline developments and forecast the future.'      
-      },
-    ],
+    name: 'Lead Generation and Classification', tagline: 'AI-powered lead identification and scoring',
+    description: 'Discover and qualify hot leads automatically. AI scans the market, identifies prospects matching your ideal customer profile, and scores them for sales-readiness.',
+    features: ['Lead Discovery', 'Qualification Scoring', 'Prospect Research', 'CRM Integration'],
     price: '$499/mo',
+    ctaType: 'waitlist',
   },
   {
     id: 8, category: 'category3', icon: MoveRight, color: '#06B6D4', colorIntensity: 0.6,
-    name: 'Outreach Automation ', tagline: 'Personalized and intelligent outreach decisions',
-    description: 'Personalized outreach emails drafted and sent in seconds. Accompanied and followed by smart recommendations for next-best-action',
-    features: [ 
-      {
-        title: 'Personalized Outreach Automation',
-        description: 'Personalized 1-to-1 outreach drafted & sent in seconds - opens and replies soarr.'
-      },
-      {
-        title: 'Next-Best-Action Reasoning',
-        description: 'Scores and reasons the need prospect’s need of your productt'
-      },
-      {
-        title: 'Quota Generation',
-        description: 'Automate Deal Calculations and add them to Contracts.'
-      },
-      {
-        title: 'Presentation Generator',
-        description: 'One Click Presentation slides for client meetings.'
-      }
-    ],
+    name: 'Meeting Agent', tagline: 'Autonomous meeting scheduling and management',
+    description: 'Never chase meeting availability again. AI proactively schedules calls with prospects, sends reminders, and follows up—moving deals forward 24/7.',
+    features: ['Meeting Scheduling', 'Calendar Integration', 'Intelligent Reminders', 'Follow-up Automation'],
     price: '$599/mo',
+    ctaType: 'waitlist',
   },
   {
     id: 9, category: 'category3', icon: TrendingUp, color: '#06B6D4', colorIntensity: 0.8,
     name: 'Full Sales Agent', tagline: 'End-to-end sales automation',
-    description: 'The complete Argo solution combining lead generation, machine learning features, and outreach automation. Your complete autonomous sales team working 24/7.',
-    features: [
-      {
-        title: 'Lead Generation',
-        description: 'One click lead generation to find the most comparable Leads to current offerings.'
-      },
-      {
-        title: 'Product Matching',
-        description: 'Scores and reasons the need prospect’s need of your product.'
-      },
-      {
-        title: 'Machine Learning',
-        description: 'Machine learning priorities tasks based on historical data and best practices and calculates real time probability to land.'
-      },
-      {
-        title: 'Manager Dashboard',
-        description: 'Real time sales analytics for sales managers to understand pipeline developments and forecast the future.'      
-      },
-      {
-        title: 'Quota Generation',
-        description: 'Automate Deal Calculations and add them to Contracts.'
-      },
-      {
-        title: 'Personalized Outreach Automation',
-        description: 'Personalized 1-to-1 outreach drafted & sent in seconds - opens and replies soarr.'
-      },
-      {
-        title: 'Next-Best-Action Reasoning',
-        description: 'Scores and reasons the need prospect’s need of your productt'
-      },
-      {
-        title: 'Presentation Generator',
-        description: 'One Click Presentation slides for client meetings.'
-      },
-      {
-        title: 'Self-Learning Loop',
-        description: 'Every win/lose feeds the model, so targeting and messaging get sharper daily.​'
-      }
-    ],
+    description: 'The complete Argeo solution combining lead generation, meeting management, and pipeline tracking. Your complete autonomous sales team working 24/7.',
+    features: ['Lead Generation', 'Meeting Scheduling', 'Pipeline Management', 'Win Rate Analytics'],
     price: '$1,199/mo',
+    ctaType: 'waitlist',
   },
 ];
 
@@ -346,28 +179,23 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState('category1');
   const [wordIndex, setWordIndex] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<typeof products[0] | null>(null);
+  const [shouldScrollToDetails, setShouldScrollToDetails] = useState(false);
   const [navVisible, setNavVisible] = useState(true);
+  const [hoveredProduct, setHoveredProduct] = useState<number | null>(null);
+  const productDetailsRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
 
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY < lastScrollY.current || currentScrollY < 100) {
-        setNavVisible(true);
-      } else if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
-        setNavVisible(false);
-      }
-      lastScrollY.current = currentScrollY;
+      const currentY = window.scrollY;
+      setNavVisible(currentY < lastScrollY.current || currentY < 10);
+      lastScrollY.current = currentY;
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-  const [shouldScrollToDetails, setShouldScrollToDetails] = useState(false);
-  const [hoveredProduct, setHoveredProduct] = useState<number | null>(null);
-  const productDetailsRef = useRef<HTMLDivElement>(null);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -409,7 +237,9 @@ export default function ProductsPage() {
         background: 'linear-gradient(160deg, #12041a 0%, #1e0835 30%, #2a0d4a 55%, #160228 80%, #0c0118 100%)',
       }}
     >
-      {}
+      <Navbar />
+
+      {/* Ambient background effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div style={{
           position: 'absolute', top: '-10%', right: '-5%',
@@ -429,9 +259,9 @@ export default function ProductsPage() {
           background: 'radial-gradient(circle, rgba(6,182,212,0.07) 0%, transparent 70%)',
           filter: 'blur(60px)',
         }} />
-        
-        {}
-        <motion.div 
+
+        {/* Interactive glow that follows category */}
+        <motion.div
           style={{
             position: 'absolute',
             width: '600px',
@@ -445,95 +275,106 @@ export default function ProductsPage() {
         />
       </div>
 
-      {/* ─── Navbar ─── */}
-      <header
-        className="fixed top-0 left-0 right-0 z-50 px-8"
-        style={{
-          height: '72px',
-          background: 'rgba(13, 0, 21, 0.85)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          transform: navVisible ? 'translateY(0)' : 'translateY(-100%)',
-          transition: 'transform 0.3s ease-in-out',
-        }}
-      >
-        <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
-          <a href="/" className="flex items-center h-full">
-            <img src="/sia-logo.png" alt="SIA" className="h-10 w-auto brightness-0 invert" />
-          </a>
-          <nav className="flex items-center gap-8">
-            <a href="/" className="text-white/60 hover:text-white transition-colors text-sm font-medium">Home</a>
-            <a href="/products" className="text-white text-sm font-medium">Products</a>
-            <a href="/about" className="text-white/60 hover:text-white transition-colors text-sm font-medium">About Us</a>
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="text-sm font-semibold px-5 py-2 rounded-lg ml-4"
-              style={{
-                background: 'linear-gradient(135deg, #E8B84A, #E8A87C)',
-                color: '#2D1B4E',
-                boxShadow: '0 0 20px rgba(232,184,74,0.25)',
-              }}
-            >
-              Get Started
-            </motion.button>
-          </nav>
-        </div>
-      </header>
-
       {/* ─── Hero Section ─── */}
-<section className="relative z-10 min-h-screen flex items-center justify-center px-6 text-center">
-  <div className="max-w-4xl mx-auto">
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.9, ease: 'easeOut' }}
-    >
-      <h1 className="text-6xl font-light text-white leading-tight mb-6">
-        Intelligent solutions
-        <div className="text-white/60 text-5xl mt-3">for your</div>
+      <section className="relative z-10 min-h-screen flex items-center justify-center px-6 text-center pt-24">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, ease: 'easeOut' }}
+          >
+            <h1 className="text-6xl font-light text-white leading-tight mb-6 relative">
 
-        <div className="relative h-[1.4em] mt-4 overflow-hidden flex justify-center">
-          {dynamicWords.map((word, index) => (
-            <motion.span
-              key={word}
-              className="absolute inset-0 flex justify-center text-6xl font-semibold"
-              style={{
-                background: 'linear-gradient(135deg, #E8B84A, #E8A87C)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-              initial={{ opacity: 0, y: 50 }}
-              animate={
-                wordIndex === index
-                  ? { y: 0, opacity: 1 }
-                  : { y: wordIndex > index ? -50 : 50, opacity: 0 }
-              }
-              transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-            >
-              {word}
-            </motion.span>
-          ))}
+              {/* Golden blinking glow — covers all 3 lines */}
+              <motion.span
+                aria-hidden="true"
+                className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+                style={{
+                  top: '-20%',
+                  width: '900px',
+                  height: '140%',
+                  borderRadius: '50%',
+                  background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(232,184,74,0.42) 0%, rgba(232,140,50,0.16) 45%, transparent 72%)',
+                  filter: 'blur(48px)',
+                  zIndex: 0,
+                }}
+                animate={{
+                  opacity: [0.5, 1, 0.5],
+                  scaleX: [0.92, 1.06, 0.92],
+                  scaleY: [0.9, 1.05, 0.9],
+                }}
+                transition={{
+                  duration: 2.8,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              />
+
+              {/* Secondary sharper inner pulse */}
+              <motion.span
+                aria-hidden="true"
+                className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+                style={{
+                  top: '0%',
+                  width: '600px',
+                  height: '100%',
+                  borderRadius: '50%',
+                  background: 'radial-gradient(ellipse 65% 55% at 50% 50%, rgba(255,210,100,0.28) 0%, transparent 68%)',
+                  filter: 'blur(28px)',
+                  zIndex: 0,
+                }}
+                animate={{
+                  opacity: [0.3, 0.8, 0.3],
+                  scaleX: [0.88, 1.1, 0.88],
+                }}
+                transition={{
+                  duration: 2.8,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: 0.4,
+                }}
+              />
+
+              <span className="relative z-10">Intelligent solutions</span>
+              <div className="text-white/60 text-5xl mt-3">for your</div>
+
+              <div className="relative h-[1.4em] mt-4 overflow-hidden flex justify-center">
+                {dynamicWords.map((word, index) => (
+                  <motion.span
+                    key={word}
+                    className="absolute inset-0 flex justify-center text-6xl font-semibold"
+                    style={{
+                      background: 'linear-gradient(135deg, #E8B84A, #E8A87C)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={
+                      wordIndex === index
+                        ? { y: 0, opacity: 1 }
+                        : { y: wordIndex > index ? -50 : 50, opacity: 0 }
+                    }
+                    transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+                  >
+                    {word}
+                  </motion.span>
+                ))}
+              </div>
+            </h1>
+
+            <p className="text-lg text-white/50 leading-relaxed max-w-2xl mx-auto mt-10">
+              Autonomous AI agents designed for Marketing, HR, and Sales.
+              Choose the perfect level of automation — from specialized tools
+              to full-suite intelligent platforms.
+            </p>
+          </motion.div>
         </div>
-      </h1>
+      </section>
 
-      <p className="text-lg text-white/50 leading-relaxed max-w-2xl mx-auto mt-10">
-        Autonomous AI agents designed for Marketing, HR, and Sales.
-        Choose the perfect level of automation — from specialized tools
-        to full-suite intelligent platforms.
-      </p>
-    </motion.div>
-  </div>
-</section>
-
-
-
-
-      {/* Orbital Interactive Display ─── */}
+      {/* ─── Orbital Interactive Display ─── */}
       <section className="relative z-10 py-32 px-6" data-products-section>
         <div className="max-w-7xl mx-auto">
-          
+
           {/* Category Pills */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -631,8 +472,8 @@ export default function ProductsPage() {
               {filteredProducts.map((product, index) => {
                 const angle = (index / filteredProducts.length) * Math.PI * 2;
                 const radius = 250;
-                const x = Math.round(Math.cos(angle) * radius);
-                const y = Math.round(Math.sin(angle) * radius);
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
 
                 return (
                   <OrbitingProduct
@@ -657,9 +498,9 @@ export default function ProductsPage() {
                 {filteredProducts.map((product, index) => {
                   const angle = (index / filteredProducts.length) * Math.PI * 2;
                   const radius = 250;
-                  const x = Math.round(Math.cos(angle) * radius);
-                  const y = Math.round(Math.sin(angle) * radius);
-                  
+                  const x = Math.cos(angle) * radius;
+                  const y = Math.sin(angle) * radius;
+
                   return (
                     <motion.line
                       key={product.id}
@@ -702,57 +543,18 @@ export default function ProductsPage() {
         )}
       </AnimatePresence>
 
-      {/* ─── CTA Section ─── */}
-      <section className="relative z-10 py-28 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <h3 className="text-5xl font-light text-white mb-5">
-              Ready to <em className="not-italic font-semibold" style={{ color: '#E8B84A' }}>automate</em> your business?
-            </h3>
-            <p className="text-lg text-white/45 mb-10">
-              See how our AI agents can revolutionize your Marketing, HR, and Sales operations.
-            </p>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-flex items-center gap-2 font-bold px-9 py-4 rounded-full text-base"
-              style={{
-                background: 'linear-gradient(135deg, #E8B84A, #E8A87C)',
-                color: '#2D1B4E',
-                boxShadow: '0 0 40px rgba(232,184,74,0.4)',
-              }}
-            >
-              Book a Demo <MoveRight className="w-5 h-5" />
-            </motion.button>
-          </motion.div>
+      {/* ─── CTA Section - Book Demo or Waitlist ─── */}
+      {selectedProduct && (
+        <div className="relative z-10 w-full">
+          {selectedProduct.ctaType === 'demo' ? (
+            <BookADemo />
+          ) : (
+            <WaitlistSection />
+          )}
         </div>
-      </section>
+      )}
 
-      {/* ─── Footer ─── */}
-      <footer className="relative z-10 pt-16 pb-10 px-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-          <div>
-            <img src="/sia-logo.png" alt="SIA" className="h-10 w-auto brightness-0 invert mb-2" />
-            <p className="text-white/30 text-sm">Execution-first AI for the Enterprise.</p>
-          </div>
-          <div className="flex gap-8 text-white/40 text-sm">
-            {['Privacy', 'Terms', 'Cookies'].map((link) => (
-              <a key={link} href="#" className="relative group overflow-hidden hover:text-white/70 transition-colors">
-                {link}
-                <span className="absolute bottom-0 left-0 w-full h-px bg-[#E8B84A] -translate-x-full transition-transform duration-300 group-hover:translate-x-0" />
-              </a>
-            ))}
-          </div>
-        </div>
-        <div className="mt-16 text-center text-white/10 text-xs tracking-widest">
-          © {new Date().getFullYear()} SIA INC. ALL RIGHTS RESERVED.
-        </div>
-      </footer>
+      <Footer />
 
       <Chatbot />
     </div>
@@ -762,8 +564,8 @@ export default function ProductsPage() {
 
 
 // ─── Orbiting Product Component ───
-function OrbitingProduct({ 
-  product, x, y, index, isHovered, onHover, onLeave, onClick 
+function OrbitingProduct({
+  product, x, y, index, isHovered, onHover, onLeave, onClick
 }: {
   product: typeof products[0];
   x: number;
@@ -784,11 +586,11 @@ function OrbitingProduct({
         y: y - 60,
       }}
       initial={{ scale: 0, opacity: 0 }}
-      animate={{ 
+      animate={{
         scale: isHovered ? 1.15 : 1,
         opacity: 1,
       }}
-      transition={{ 
+      transition={{
         type: 'spring',
         stiffness: 300,
         damping: 20,
@@ -801,7 +603,7 @@ function OrbitingProduct({
       <motion.div
         className="w-32 h-32 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden"
         style={{
-          background: isHovered 
+          background: isHovered
             ? `linear-gradient(135deg, ${product.color}30, ${product.color}15)`
             : `rgba(255,255,255,0.04)`,
           border: `1px solid ${isHovered ? product.color : 'rgba(255,255,255,0.1)'}`,
@@ -810,14 +612,14 @@ function OrbitingProduct({
         whileHover={{ rotate: [0, -5, 5, 0] }}
         transition={{ duration: 0.4 }}
       >
-        <IconComponent 
-          className="w-10 h-10 mb-2" 
+        <IconComponent
+          className="w-10 h-10 mb-2"
           style={{ color: product.color }}
         />
         <span className="text-white text-xs font-semibold text-center px-2">
           {product.name.split(' ')[0]}
         </span>
-        
+
         {/* Pulse effect on hover */}
         {isHovered && (
           <motion.div
@@ -834,7 +636,7 @@ function OrbitingProduct({
       <AnimatePresence>
         {isHovered && (
           <motion.div
-            className="absolute left-full ml-4 top-1/2 -translate-y-1/2 w-64 p-4 rounded-xl pointer-events-none"
+            className="absolute left-full ml-4 top-1/2 -translate-y-1/2 w-64 p-4 rounded-xl"
             style={{
               background: 'rgba(10, 0, 20, 0.95)',
               border: `1px solid ${product.color}40`,
@@ -850,7 +652,9 @@ function OrbitingProduct({
             <p className="text-white/50 text-xs mb-3">{product.tagline}</p>
             <div className="flex items-center justify-between">
               <span className="text-white font-bold text-lg">{product.price}</span>
-              <span className="text-xs" style={{ color: product.color }}>Click to learn more →</span>
+              <span className="text-xs" style={{ color: product.color }}>
+                Click to learn more →
+              </span>
             </div>
           </motion.div>
         )}
@@ -858,7 +662,6 @@ function OrbitingProduct({
     </motion.div>
   );
 }
-
 
 const ProductDetailsSection = forwardRef<
   HTMLDivElement,
@@ -890,10 +693,9 @@ const ProductDetailsSection = forwardRef<
         >
           <div className="grid grid-cols-3 gap-14 items-center">
             <div className="col-span-1">
-             <h2 className="text-4xl font-light text-gray-900 mb-6 text-center">
-  {product.name}
-</h2>
-
+              <h2 className="text-4xl font-light text-white mb-6 text-center">
+                {product.name}
+              </h2>
               <p className="text-base text-white/55 leading-relaxed mb-6">{product.description}</p>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: product.color }} />
@@ -917,7 +719,7 @@ const ProductDetailsSection = forwardRef<
           </div>
         </motion.div>
 
-        {}
+        {/* Features breakdown */}
         <motion.div
           className="mb-28"
           initial={{ opacity: 0, y: 30 }}
@@ -961,8 +763,10 @@ const ProductDetailsSection = forwardRef<
                         <FeatureIcon className="w-5 h-5" style={{ color: product.color }} />
                       </div>
                       <div>
-                        <h4 className="text-lg font-semibold text-white mb-1">{feat.title}</h4>
-                        <p className="text-white/50 text-sm">{feat.description}</p>
+                        <h4 className="text-lg font-semibold text-white mb-1">{feat}</h4>
+                        <p className="text-white/45 text-sm leading-relaxed">
+                          {`Provides ${feat.toLowerCase()} to streamline processes, increase accuracy, and save time.`}
+                        </p>
                       </div>
                     </motion.div>
                   );
@@ -972,7 +776,7 @@ const ProductDetailsSection = forwardRef<
           </div>
         </motion.div>
 
-        {}
+        {/* Demo/Video */}
         <motion.div
           className="mb-28"
           initial={{ opacity: 0, y: 30 }}
@@ -1002,7 +806,7 @@ const ProductDetailsSection = forwardRef<
           </div>
         </motion.div>
 
-        {}
+        {/* Other products upsell */}
         <motion.div
           className="mb-16"
           initial={{ opacity: 0, y: 30 }}
@@ -1050,8 +854,6 @@ const ProductDetailsSection = forwardRef<
             </div>
           </div>
         </motion.div>
-
-       
 
       </div>
     </motion.div>
