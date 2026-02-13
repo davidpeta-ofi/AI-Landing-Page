@@ -735,7 +735,7 @@ export default function AboutPage() {
     <div ref={containerRef} className="bg-[#0d0015] min-h-screen">
       <Navbar/>
 
-      <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-6 md:px-10 lg:px-16 min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #0d0015 0%, #1a0a2e 50%, #2D1B4E 100%)' }}>
+      <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-4 sm:px-6 md:px-10 lg:px-16 min-h-[80vh] md:min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #0d0015 0%, #1a0a2e 50%, #2D1B4E 100%)' }}>
         <motion.div
           className="max-w-7xl mx-auto w-full"
           initial={{ opacity: 0, y: 50 }}
@@ -754,7 +754,7 @@ export default function AboutPage() {
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-white mb-4 leading-tight tracking-tighter">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-white mb-4 leading-tight tracking-tighter">
                       The AI revolution is <em className="italic text-[#E8B84A]">already here.</em>
                     </h1>
                     <p className="text-base md:text-lg text-white/70 font-light mb-6 leading-relaxed">
@@ -972,7 +972,7 @@ export default function AboutPage() {
         </motion.div>
       </section>
 
-      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 relative overflow-hidden min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #2D1B4E 0%, #3d2a5f 50%, #2D1B4E 100%)' }}>
+      <section className="py-16 md:py-32 px-4 sm:px-6 md:px-10 lg:px-16 relative overflow-hidden min-h-[80vh] md:min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #2D1B4E 0%, #3d2a5f 50%, #2D1B4E 100%)' }}>
         <div className="max-w-7xl mx-auto relative z-10 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
             <motion.div
@@ -982,7 +982,7 @@ export default function AboutPage() {
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.8, ease: "easeOut" }}
             >
-              <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-white mb-8 leading-tight tracking-tight">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-white mb-8 leading-tight tracking-tight">
                 The giants are <em className="italic text-[#E8B84A]">pulling ahead.</em>
               </h2>
               <AnimatePresence mode="wait">
@@ -1055,7 +1055,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #2D1B4E 0%, #1a0a2e 50%, #2D1B4E 100%)' }}>
+      <section className="py-16 md:py-32 px-4 sm:px-6 md:px-10 lg:px-16 min-h-[80vh] md:min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #2D1B4E 0%, #1a0a2e 50%, #2D1B4E 100%)' }}>
         <div className="max-w-6xl mx-auto w-full">
           <motion.div
             className="text-center mb-12 md:mb-20"
@@ -1064,7 +1064,7 @@ export default function AboutPage() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-light text-white mb-6 leading-tight tracking-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-white mb-6 leading-tight tracking-tight">
               We exist to <em className="italic text-[#E8B84A]">level the field.</em>
             </h2>
             <p className="text-base md:text-lg text-white/70 max-w-2xl mx-auto font-light leading-relaxed">
@@ -1123,7 +1123,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #2D1B4E 0%, #3d2a5f 50%, #2D1B4E 100%)' }}>
+      <section className="py-16 md:py-32 px-4 sm:px-6 md:px-10 lg:px-16 min-h-[80vh] md:min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #2D1B4E 0%, #3d2a5f 50%, #2D1B4E 100%)' }}>
         <div className="max-w-7xl mx-auto w-full">
           <motion.div
             className="text-center mb-10 md:mb-16"
@@ -1133,7 +1133,7 @@ export default function AboutPage() {
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
             <motion.h2
-              className="text-3xl md:text-5xl lg:text-6xl font-light text-white mb-6 leading-tight tracking-tight"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-white mb-6 leading-tight tracking-tight"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: false, amount: 0.8 }}
@@ -1391,7 +1391,7 @@ export default function AboutPage() {
       </section>
 
 
-      <section id="cta" className="relative z-10 py-16 md:py-28 px-6 min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #2D1B4E 0%, #1a0a2e 50%, #0d0015 100%)' }}>
+      <section id="cta" className="relative z-10 py-16 md:py-28 px-4 sm:px-6 min-h-[60vh] md:min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #2D1B4E 0%, #1a0a2e 50%, #0d0015 100%)' }}>
         <div className="max-w-4xl mx-auto text-center w-full">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -1399,10 +1399,10 @@ export default function AboutPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h3 className="text-3xl md:text-5xl font-light text-white mb-5">
+            <h3 className="text-3xl sm:text-4xl md:text-5xl font-light text-white mb-5">
               Ready to <em className="not-italic font-semibold" style={{ color: '#E8B84A' }}>level the playing field?</em>
             </h3>
-            <p className="text-lg text-white/45 mb-10">
+            <p className="text-base md:text-lg text-white/45 mb-8 md:mb-10">
               Join the waitlist to be the first to know when we launch.
             </p>
             <WaitlistForm />

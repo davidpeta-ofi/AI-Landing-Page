@@ -384,7 +384,7 @@ function ProductsPageContent() {
         <FloatingDots />
 
       {/* ─── Hero Section with Floating Dots ─── */}
-      <section className="relative z-10 min-h-screen flex items-center justify-center px-6 text-center pt-24">
+      <section className="relative z-10 min-h-[80vh] md:min-h-screen flex items-center justify-center px-4 sm:px-6 text-center pt-20 md:pt-24">
 
         <div className="max-w-4xl mx-auto relative z-10">
           <motion.div
@@ -392,12 +392,12 @@ function ProductsPageContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, ease: 'easeOut' }}
           >
-            <h1 className="text-6xl font-light text-white leading-tight mb-6 relative">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-white leading-tight mb-6 relative">
 
               {/* Golden blinking glow */}
               <motion.span
                 aria-hidden="true"
-                className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+                className="absolute left-1/2 -translate-x-1/2 pointer-events-none hidden sm:block"
                 style={{
                   top: '-20%',
                   width: '900px',
@@ -422,7 +422,7 @@ function ProductsPageContent() {
               {/* Secondary sharper inner pulse */}
               <motion.span
                 aria-hidden="true"
-                className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+                className="absolute left-1/2 -translate-x-1/2 pointer-events-none hidden sm:block"
                 style={{
                   top: '0%',
                   width: '600px',
@@ -445,13 +445,13 @@ function ProductsPageContent() {
               />
 
               <span className="relative z-10">Intelligent solutions</span>
-              <div className="text-white/60 text-5xl mt-3">for your</div>
+              <div className="text-white/60 text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-3">for your</div>
 
               <div className="relative h-[1.4em] mt-4 overflow-hidden flex justify-center">
                 {dynamicWords.map((word, index) => (
                   <motion.span
                     key={word}
-                    className="absolute inset-0 flex justify-center text-6xl font-semibold"
+                    className="absolute inset-0 flex justify-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold"
                     style={{
                       background: 'linear-gradient(135deg, #E8B84A, #E8A87C)',
                       WebkitBackgroundClip: 'text',
@@ -471,7 +471,7 @@ function ProductsPageContent() {
               </div>
             </h1>
 
-            <p className="text-lg text-white/50 leading-relaxed max-w-2xl mx-auto mt-10">
+            <p className="text-base md:text-lg text-white/50 leading-relaxed max-w-2xl mx-auto mt-8 md:mt-10">
               Autonomous AI agents designed for Marketing, HR, and Sales.
               Choose the perfect level of automation — from specialized tools
               to full-suite intelligent platforms.
@@ -481,7 +481,7 @@ function ProductsPageContent() {
       </section>
 
       {/* ─── Orbital Interactive Display ─── */}
-      <section className="relative z-10 py-24 px-6" data-products-section>
+      <section className="relative z-10 py-16 md:py-24 px-4 sm:px-6" data-products-section>
         <div className="max-w-6xl mx-auto">
 
           {/* Category Pills */}
@@ -503,7 +503,7 @@ function ProductsPageContent() {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className="relative px-7 py-3 rounded-full text-sm font-semibold transition-all duration-300 z-10"
+                  className="relative px-4 py-2 sm:px-7 sm:py-3 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 z-10"
                   style={{
                     color: selectedCategory === cat.id ? 'white' : 'rgba(255,255,255,0.45)',
                   }}
@@ -530,18 +530,18 @@ function ProductsPageContent() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="text-center mb-12"
+            className="text-center mb-8 md:mb-12"
           >
-            <h2 className="text-5xl font-light text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-light text-white mb-4">
               Explore our <span className="font-semibold" style={{ color: activeCategory.color }}>ecosystem</span>
             </h2>
-            <p className="text-lg text-white/45">
+            <p className="text-base md:text-lg text-white/45">
               Interactive view of how our AI agents work together
             </p>
           </motion.div>
 
           {/* TWO-COLUMN LAYOUT: Pilot Left, Orbital Right */}
-          <div className="grid grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
 
             {/* LEFT SIDE - Pilot Program CTA */}
             <motion.div
@@ -549,7 +549,7 @@ function ProductsPageContent() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="p-8 rounded-2xl relative overflow-hidden"
+              className="p-6 sm:p-8 rounded-2xl relative overflow-hidden"
               style={{
                 background: 'linear-gradient(135deg, rgba(0,0,0,0.6), rgba(20,10,30,0.8))',
                 border: '1px solid rgba(232,184,74,0.3)',
@@ -562,15 +562,15 @@ function ProductsPageContent() {
               />
 
               <div className="relative z-10">
-                <h3 className="text-3xl font-bold text-white mb-3">
+                <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
                   Join our Pilot Program!
                 </h3>
-                <p className="text-white/70 mb-6 leading-relaxed">
+                <p className="text-sm sm:text-base text-white/70 mb-6 leading-relaxed">
                   Be among the first to experience our AI agents working together. Limited spots available for early adopters.
                 </p>
                 <motion.button
                   onClick={() => setShowPilotOverlay(true)}
-                  className="px-8 py-3.5 rounded-lg font-semibold text-black flex items-center gap-2 group"
+                  className="px-6 sm:px-8 py-3 sm:py-3.5 rounded-lg font-semibold text-black flex items-center gap-2 group text-sm sm:text-base"
                   style={{ background: 'linear-gradient(135deg, #E8B84A, #E8A87C)' }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -583,9 +583,8 @@ function ProductsPageContent() {
 
             {/* RIGHT SIDE - ORBITAL VISUALIZATION (SMALLER) */}
             <div className="relative">
-              {/* ↓ Reduced from 600px to 420px */}
-              <div className="flex items-center justify-center" style={{ minHeight: '420px' }}>
-                <div className="relative" style={{ width: '420px', height: '420px' }}>
+              <div className="flex items-center justify-center" style={{ minHeight: '320px' }}>
+                <div className="relative scale-[0.65] sm:scale-[0.8] md:scale-[0.9] lg:scale-100 origin-center" style={{ width: '420px', height: '420px' }}>
                   
                   {/* Empty Central Circle */}
                   <motion.div
@@ -865,33 +864,33 @@ function ProductsPageContent() {
               <button onClick={() => setShowPilotOverlay(false)} className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all z-10">
                 <X className="w-5 h-5" />
               </button>
-              <div className="relative px-8 pt-8 pb-6">
+              <div className="relative px-5 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6">
                 <div className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-20" style={{ background: 'radial-gradient(circle, #E8B84A, transparent)' }} />
-                <h2 className="text-3xl font-bold text-white mb-2 relative z-10">Join Our Pilot Project</h2>
-                <p className="text-white/60 text-base relative z-10">Lock in your competitive advantage with exclusive early access</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 relative z-10">Join Our Pilot Project</h2>
+                <p className="text-white/60 text-sm sm:text-base relative z-10">Lock in your competitive advantage with exclusive early access</p>
               </div>
-              <div className="px-8 pb-8">
-                <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="px-5 sm:px-8 pb-6 sm:pb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
                   {[
                     { val: '2 Years', label: 'Early Access Head Start', desc: 'Get first-mover advantage while competitors are still figuring out where to start' },
                     { val: '67% Off', label: 'Brand Presence Discount', desc: 'Marketing & digital presence bundled at a fraction of standard rates' },
                     { val: '€4,200', label: 'Complete Package', desc: 'Enterprise-grade AI infrastructure at SME pricing—10x less than competitors' },
                   ].map((item) => (
-                    <div key={item.val} className="p-5 rounded-xl" style={{ background: 'rgba(232,184,74,0.08)', border: '1px solid rgba(232,184,74,0.2)' }}>
-                      <div className="text-2xl font-bold mb-1" style={{ color: '#E8B84A' }}>{item.val}</div>
+                    <div key={item.val} className="p-4 sm:p-5 rounded-xl" style={{ background: 'rgba(232,184,74,0.08)', border: '1px solid rgba(232,184,74,0.2)' }}>
+                      <div className="text-xl sm:text-2xl font-bold mb-1" style={{ color: '#E8B84A' }}>{item.val}</div>
                       <div className="text-sm font-semibold text-white mb-2">{item.label}</div>
                       <p className="text-xs text-white/60 leading-relaxed">{item.desc}</p>
                     </div>
                   ))}
                 </div>
-                <div className="p-4 rounded-xl mb-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <div className="grid grid-cols-4 gap-4 text-sm">
+                <div className="p-3 sm:p-4 rounded-xl mb-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-sm">
                     {[['Duration','6 months'],['Start Date','March 2026'],['Spots Left','20 companies'],['Commitment','Active feedback']].map(([label,val]) => (
-                      <div key={label}><div className="text-white/50 text-xs mb-1">{label}</div><div className="text-white font-semibold">{val}</div></div>
+                      <div key={label}><div className="text-white/50 text-xs mb-1">{label}</div><div className="text-white font-semibold text-sm">{val}</div></div>
                     ))}
                   </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <motion.button className="flex-1 px-6 py-3.5 rounded-lg font-semibold text-black text-sm" style={{ background: 'linear-gradient(135deg, #E8B84A, #E8A87C)' }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>Apply for Pilot Access</motion.button>
                   <motion.button onClick={() => setShowPilotOverlay(false)} className="px-6 py-3.5 rounded-lg font-semibold text-white text-sm border border-white/20 hover:bg-white/5" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>Maybe Later</motion.button>
                 </div>
@@ -1035,21 +1034,21 @@ const ProductDetailsSection = forwardRef<
   const otherProducts = products.filter(p => p.id !== product.id).slice(0, 2);
 
   return (
-    <motion.div ref={ref} className="relative z-10 py-24 px-6 w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <div className="max-w-7xl mx-auto mb-24" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }} />
+    <motion.div ref={ref} className="relative z-10 py-16 md:py-24 px-4 sm:px-6 w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <div className="max-w-7xl mx-auto mb-16 md:mb-24" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }} />
       <div className="max-w-7xl mx-auto">
-        <motion.div className="mb-28" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.2 }} transition={{ duration: 0.6 }}>
-          <div className="grid grid-cols-3 gap-14 items-center">
-            <div className="col-span-1">
-              <h2 className="text-4xl font-light text-white mb-6 text-center">{product.name}</h2>
-              <p className="text-base text-white/55 leading-relaxed mb-6">{product.description}</p>
-              <div className="flex items-center gap-2">
+        <motion.div className="mb-16 md:mb-28" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.2 }} transition={{ duration: 0.6 }}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-14 items-center">
+            <div className="lg:col-span-1 text-center lg:text-left">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-light text-white mb-4 lg:mb-6">{product.name}</h2>
+              <p className="text-sm sm:text-base text-white/55 leading-relaxed mb-4 lg:mb-6">{product.description}</p>
+              <div className="flex items-center gap-2 justify-center lg:justify-start">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: product.color }} />
                 <span className="text-white/40 text-sm">Premium features included</span>
               </div>
             </div>
-            <div className="col-span-2">
-              <div className="w-full h-[380px] rounded-2xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${product.color}14, ${product.color}06)`, border: `1px solid ${product.color}20` }}>
+            <div className="lg:col-span-2">
+              <div className="w-full h-[220px] sm:h-[280px] lg:h-[380px] rounded-2xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${product.color}14, ${product.color}06)`, border: `1px solid ${product.color}20` }}>
                 <div className="text-center opacity-40">
                   {getCategoryRobot(product.category, 120)}
                   <p className="text-white text-sm mt-4">Illustration coming soon</p>
@@ -1059,24 +1058,24 @@ const ProductDetailsSection = forwardRef<
           </div>
         </motion.div>
 
-        <motion.div id="how-it-works" className="mb-28 scroll-mt-28" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.2 }} transition={{ duration: 0.6 }}>
-          <div className="grid grid-cols-3 gap-14 items-start">
-            <div className="col-span-1">
-              <h3 className="text-4xl font-light text-white mb-4">How does<div className="text-4xl font-semibold mt-1" style={{ color: product.color }}>{getBrandName(product.category)} work?</div></h3>
-              <p className="text-base text-white/50 leading-relaxed">A breakdown of the core capabilities — each function is designed to save time, reduce manual effort, and deliver measurable results.</p>
+        <motion.div id="how-it-works" className="mb-16 md:mb-28 scroll-mt-28" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.2 }} transition={{ duration: 0.6 }}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-14 items-start">
+            <div className="lg:col-span-1 text-center lg:text-left">
+              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-light text-white mb-4">How does<div className="text-2xl sm:text-3xl lg:text-4xl font-semibold mt-1" style={{ color: product.color }}>{getBrandName(product.category)} work?</div></h3>
+              <p className="text-sm sm:text-base text-white/50 leading-relaxed">A breakdown of the core capabilities — each function is designed to save time, reduce manual effort, and deliver measurable results.</p>
             </div>
-            <div className="col-span-2">
+            <div className="lg:col-span-2">
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
                 {product.features.map((feat, idx) => {
                   const FeatureIcon = featureIcons[idx % featureIcons.length];
                   return (
-                    <motion.div key={idx} className="py-6 flex gap-6 items-start" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, amount: 0.2 }} transition={{ delay: idx * 0.07 }}>
-                      <div className="w-11 h-11 rounded-xl flex-shrink-0 flex items-center justify-center" style={{ background: `${product.color}18`, border: `1px solid ${product.color}30` }}>
-                        <FeatureIcon className="w-5 h-5" style={{ color: product.color }} />
+                    <motion.div key={idx} className="py-5 sm:py-6 flex gap-4 sm:gap-6 items-start" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, amount: 0.2 }} transition={{ delay: idx * 0.07 }}>
+                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex-shrink-0 flex items-center justify-center" style={{ background: `${product.color}18`, border: `1px solid ${product.color}30` }}>
+                        <FeatureIcon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: product.color }} />
                       </div>
                       <div>
-                        <h4 className="text-lg font-semibold text-white mb-1">{feat}</h4>
-                        <p className="text-white/45 text-sm leading-relaxed">{`Provides ${feat.toLowerCase()} to streamline processes, increase accuracy, and save time.`}</p>
+                        <h4 className="text-base sm:text-lg font-semibold text-white mb-1">{feat}</h4>
+                        <p className="text-white/45 text-xs sm:text-sm leading-relaxed">{`Provides ${feat.toLowerCase()} to streamline processes, increase accuracy, and save time.`}</p>
                       </div>
                     </motion.div>
                   );
@@ -1086,12 +1085,12 @@ const ProductDetailsSection = forwardRef<
           </div>
         </motion.div>
 
-        <motion.div className="mb-28" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.2 }} transition={{ duration: 0.6 }}>
-          <h3 className="text-4xl font-light text-white text-center mb-10">See <span style={{ color: product.color }}>{product.name}</span> in action</h3>
-          <div className="w-full h-[460px] rounded-2xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${product.color}10, ${product.color}04)`, border: `1px solid ${product.color}18` }}>
+        <motion.div className="mb-16 md:mb-28" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.2 }} transition={{ duration: 0.6 }}>
+          <h3 className="text-2xl sm:text-3xl lg:text-4xl font-light text-white text-center mb-6 md:mb-10">See <span style={{ color: product.color }}>{product.name}</span> in action</h3>
+          <div className="w-full h-[260px] sm:h-[360px] lg:h-[460px] rounded-2xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${product.color}10, ${product.color}04)`, border: `1px solid ${product.color}18` }}>
             <div className="text-center opacity-40">
-              <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: `${product.color}25`, border: `2px solid ${product.color}50` }}>
-                <span className="text-4xl">▶</span>
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: `${product.color}25`, border: `2px solid ${product.color}50` }}>
+                <span className="text-3xl sm:text-4xl">▶</span>
               </div>
               <p className="text-white text-sm">Demo video coming soon</p>
             </div>
@@ -1099,24 +1098,24 @@ const ProductDetailsSection = forwardRef<
         </motion.div>
 
         <motion.div className="mb-16" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} transition={{ duration: 0.6 }}>
-          <div className="grid grid-cols-3 gap-14 items-center">
-            <div className="col-span-1">
-              <p className="text-white/40 text-base mb-3">Not what you're looking for?</p>
-              <h3 className="text-3xl font-light text-white">Check our other <span style={{ color: product.color }}>solutions</span></h3>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-14 items-center">
+            <div className="lg:col-span-1 text-center lg:text-left">
+              <p className="text-white/40 text-sm sm:text-base mb-3">Not what you're looking for?</p>
+              <h3 className="text-2xl sm:text-3xl font-light text-white">Check our other <span style={{ color: product.color }}>solutions</span></h3>
             </div>
-            <div className="col-span-2 flex gap-5">
+            <div className="lg:col-span-2 flex flex-col sm:flex-row gap-4 sm:gap-5">
               {otherProducts.map((prod) => (
                 <motion.button key={prod.id} onClick={() => onSelectProduct(prod)} whileHover={{ scale: 1.02, y: -3 }} whileTap={{ scale: 0.98 }}
-                  className="flex-1 px-6 py-5 rounded-xl text-left group"
+                  className="flex-1 px-5 sm:px-6 py-4 sm:py-5 rounded-xl text-left group"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', transition: 'border-color 0.2s, background 0.2s' }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = prod.color + '60'; (e.currentTarget as HTMLElement).style.background = `${prod.color}0D`; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     {prod.icon && <prod.icon className="w-4 h-4" style={{ color: prod.color }} />}
-                    <h4 className="text-base font-semibold text-white">{prod.name}</h4>
+                    <h4 className="text-sm sm:text-base font-semibold text-white">{prod.name}</h4>
                   </div>
-                  <p className="text-sm text-white/40">{prod.tagline}</p>
+                  <p className="text-xs sm:text-sm text-white/40">{prod.tagline}</p>
                 </motion.button>
               ))}
             </div>
