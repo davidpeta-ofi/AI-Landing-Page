@@ -848,7 +848,7 @@ export default function AboutPage() {
 
             <div className="relative flex justify-center">
               <div
-                className="relative w-[450px] h-64 pt-12 overflow-hidden scale-[0.65] sm:scale-[0.8] lg:scale-100 origin-center"
+                className="relative w-[450px] h-64 pt-12 overflow-hidden scale-[0.65] sm:scale-[0.8] lg:scale-100 origin-center mx-auto"
                 style={{
                   maskImage: 'linear-gradient(to bottom, black 75%, transparent 100%)',
                   WebkitMaskImage: 'linear-gradient(to bottom, black 75%, transparent 100%)',
@@ -976,7 +976,7 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto relative z-10 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
             <motion.div
-              className="text-center lg:text-left order-2 lg:order-1"
+              className="text-center lg:text-left"
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
@@ -1045,7 +1045,7 @@ export default function AboutPage() {
               </AnimatePresence>
             </motion.div>
 
-            <div className="relative min-h-[350px] lg:min-h-[500px] flex items-center justify-center order-1 lg:order-2 scale-[0.75] sm:scale-[0.85] lg:scale-100 origin-center">
+            <div className="relative min-h-[350px] lg:min-h-[500px] flex items-center justify-center scale-[0.75] sm:scale-[0.85] lg:scale-100 origin-center">
               <TetrisAnimation
                 onSubtitleTrigger={() => setShowSubtitle(true)}
                 onPieceChange={(index) => setCurrentPiece(index)}
@@ -1155,7 +1155,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center min-h-[400px] lg:min-h-[500px]">
             <div className="relative flex justify-center">
               <div
-                className="relative w-[450px] h-64 pt-12 overflow-hidden scale-[0.65] sm:scale-[0.8] lg:scale-100 origin-center"
+                className="relative w-[450px] h-64 pt-12 overflow-hidden scale-[0.65] sm:scale-[0.8] lg:scale-100 origin-center mx-auto"
                 style={{
                   maskImage: 'linear-gradient(to bottom, black 75%, transparent 100%)',
                   WebkitMaskImage: 'linear-gradient(to bottom, black 75%, transparent 100%)',
