@@ -91,8 +91,6 @@ function TetrisAnimation({ onSubtitleTrigger, onPieceChange }: { onSubtitleTrigg
   const [justLanded, setJustLanded] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
   const lastScrollTime = useRef(0);
-  const seenOnce = useRef(false);
-  const leftView = useRef(false);
 
   const placePiece = (pieceData: typeof tetrisPieces[0], row: number, col: number) => {
     setBoard((prevBoard) => {
@@ -185,23 +183,9 @@ function TetrisAnimation({ onSubtitleTrigger, onPieceChange }: { onSubtitleTrigg
 
       const rect = sectionRef.current.getBoundingClientRect();
       const windowHeight = window.innerHeight;
-      const isInView = rect.top <= windowHeight * 0.5 && rect.top >= windowHeight * 0.3;
-      const isOutOfView = rect.top > windowHeight || rect.bottom < 0;
+      const isInView = rect.top <= windowHeight * 0.5 && rect.bottom >= windowHeight * 0.5;
 
-      // First time in view: mark as seen but don't activate
-      if (isInView && !seenOnce.current) {
-        seenOnce.current = true;
-        return;
-      }
-
-      // Track when user scrolls away after first view
-      if (seenOnce.current && !leftView.current && isOutOfView) {
-        leftView.current = true;
-        return;
-      }
-
-      // Second time in view: activate
-      if (isInView && seenOnce.current && leftView.current) {
+      if (isInView) {
         setSectionActivated(true);
         setScrollLocked(true);
         dropPiece(0);

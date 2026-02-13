@@ -157,6 +157,10 @@ export default function OpseraLanding() {
     archHovered === 3 || (archComplete && archHovered === null)
   );
 
+  // Columns & crown visible in preview (dimmed) and when showAutonomous
+  const columnsVisible = archPreview || showAutonomous;
+  const columnsOpacity = archPreview ? 0.4 : (showAutonomous ? 1 : 0);
+
   const lastScrollY = useRef(0);
 
   // Auto-hide navbar on scroll
@@ -1237,7 +1241,7 @@ export default function OpseraLanding() {
                         }}
                       >
                         <span className="text-[9px] text-purple-300/70 font-bold tracking-[1px] uppercase transition-opacity duration-300"
-                          style={{ opacity: showAutonomous ? 0 : 1 }}
+                          style={{ opacity: columnsVisible ? 0 : 1 }}
                         >
                           {item.label}
                         </span>
@@ -1384,8 +1388,8 @@ export default function OpseraLanding() {
                         width: `${col.tw}px`,
                         height: '36px',
                         transformStyle: 'preserve-3d',
-                        transform: `scaleZ(${showAutonomous ? 1 : 0})`,
-                        opacity: showAutonomous ? 1 : 0,
+                        transform: `scaleZ(${columnsVisible ? 1 : 0})`,
+                        opacity: columnsOpacity,
                         transition: 'transform 1.2s linear, opacity 0.15s linear',
                       }}
                     >
@@ -1423,9 +1427,9 @@ export default function OpseraLanding() {
                             top: '50%',
                             transform: 'translate(-50%, -50%) scaleX(-1)',
                             letterSpacing: '1.5px',
-                            opacity: showAutonomous ? 1 : 0,
+                            opacity: columnsVisible ? (archPreview ? 0.4 : 1) : 0,
                             transition: 'opacity 0.5s ease',
-                            transitionDelay: showAutonomous ? '1.2s' : '0s',
+                            transitionDelay: (!archPreview && showAutonomous) ? '1.2s' : '0s',
                           }}
                         >
                           {col.label}
@@ -1464,9 +1468,9 @@ export default function OpseraLanding() {
                   }}
                 >
                   <motion.svg
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: showAutonomous ? 1 : 0 }}
-                    transition={{ duration: 0.5, delay: showAutonomous ? 1.2 : 0 }}
+                    initial={{ opacity: archPreview ? 0.4 : 0 }}
+                    animate={{ opacity: columnsOpacity }}
+                    transition={{ duration: 0.5, delay: (!archPreview && showAutonomous) ? 1.2 : 0 }}
                     className="absolute inset-0 pointer-events-none"
                     viewBox="0 0 320 320"
                     overflow="visible"
