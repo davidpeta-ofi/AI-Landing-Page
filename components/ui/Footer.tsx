@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Twitter, Linkedin, Github } from 'lucide-react';
+import Image from 'next/image';
 
 const Footer = () => {
   return (
@@ -11,8 +12,8 @@ const Footer = () => {
         {/* Left: Logo & Tagline */}
         <div className="text-center md:text-left flex flex-col items-center md:items-start">
           <div className="relative">
-            <img src="/sia-text.png" alt="SIA" className="h-16 w-brightness-0 invert -bold" />
-            <img src="/sia-globe-v2.png" alt="SIA Globe" className="h-12 w-auto mix-blend-lighten absolute left-1/2 -translate-x-[56%] -top-7" />
+            <Image src="/sia-text.webp" alt="SIA" width={100} height={100} className="h-16 w-auto brightness-0 invert" />
+            <Image src="/sia-globe-v2.webp" alt="SIA Globe" width={96} height={96} className="h-12 w-auto mix-blend-lighten absolute left-1/2 -translate-x-[56%] -top-7" />
           </div>
           <p className="text-white/40 text-sm tracking-wide font-[family-name:var(--font-inter)] mt-2">
             Execution-first AI for the Enterprise.

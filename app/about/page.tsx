@@ -472,7 +472,7 @@ function TetrisAnimation({ onSubtitleTrigger, onPieceChange }: { onSubtitleTrigg
                   <>
                     {cell.icon === '🏢' ? (
                       <motion.img
-                        src="/sia-logo.png"
+                        src="/sia-logo.webp"
                         alt="SIA"
                         style={{
                           width: '80px',
@@ -596,7 +596,7 @@ function TetrisAnimation({ onSubtitleTrigger, onPieceChange }: { onSubtitleTrigg
                     }
                   >
                     <img
-                      src="/sia-logo.png"
+                      src="/sia-logo.webp"
                       alt="SIA"
                       style={{
                         width: '80px',

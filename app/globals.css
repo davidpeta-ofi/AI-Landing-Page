@@ -206,3 +206,12 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(107, 78, 155, 0.3) transparent;
 }
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -44,12 +44,31 @@ export default function RadialOrbitalTimeline({
     onSelectNode(id);
   };
 
+  // Pause rAF when off-screen via IntersectionObserver
+  const isVisibleRef = useRef(true);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { isVisibleRef.current = entry.isIntersecting; },
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   // rAF-based rotation that updates DOM directly instead of causing React re-renders
   useEffect(() => {
     let animId: number;
     let lastTime = performance.now();
 
     const tick = (now: number) => {
+      if (!isVisibleRef.current) {
+        lastTime = now;
+        animId = requestAnimationFrame(tick);
+        return;
+      }
+
       const dt = now - lastTime;
       // 0.3 degrees per 50ms = 6 degrees/sec
       rotationRef.current = (rotationRef.current + (dt / 50) * 0.3) % 360;

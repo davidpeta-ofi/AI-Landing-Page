@@ -2,15 +2,17 @@
 
 import { motion, useScroll, useTransform, animate, useInView, AnimatePresence } from 'framer-motion';
 import { useRef, MouseEvent, useEffect, useState, useMemo } from 'react';
-import { ShaderAnimation } from "@/components/ui/shader-lines";
-import RadialOrbitalTimeline from "@/components/ui/radial-orbital-timeline";
 import { Users, Target, Box, Bot, Zap, ScanSearch, Rocket, MoveRight, Brain, BookOpen, Lightbulb, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import Chatbot from '@/components/ui/chatbot';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/ui/Navbar';
 import Footer from '@/components/ui/Footer';
-import SIADashboard from '@/components/ui/SIADashboard';
 import WaitlistModal from '@/components/ui/WaitlistModal';
+
+const ShaderAnimation = dynamic(() => import("@/components/ui/shader-lines").then(mod => ({ default: mod.ShaderAnimation })), { ssr: false });
+const RadialOrbitalTimeline = dynamic(() => import("@/components/ui/radial-orbital-timeline"), { ssr: false });
+const SIADashboard = dynamic(() => import("@/components/ui/SIADashboard"), { ssr: false });
+const Chatbot = dynamic(() => import("@/components/ui/chatbot"), { ssr: false });
 
 
 const CountUp = ({ to, duration = 2, suffix = "", prefix = "" }: { to: number, duration?: number, suffix?: string, prefix?: string }) => {

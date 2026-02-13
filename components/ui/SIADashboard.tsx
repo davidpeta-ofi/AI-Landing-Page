@@ -144,7 +144,7 @@ export default function SIADashboard() {
 
       {/* SIDEBAR */}
       <div style={{ width: 52, background: C.bgSidebar, borderRight: `1px solid ${C.border}`, display:'flex', flexDirection:'column', alignItems:'center', padding:'12px 0', flexShrink:0, zIndex:2 }}>
-        <img src="/sia-globe-v2.png" alt="SIA" style={{ width:32, height:32, objectFit:'contain', marginBottom:20, mixBlendMode:'lighten' }} />
+        <img src="/sia-globe-v2.webp" alt="SIA" style={{ width:32, height:32, objectFit:'contain', marginBottom:20, mixBlendMode:'lighten' }} />
         <div style={{ display:'flex', flexDirection:'column', gap:4, flex:1 }}>
           {NAV.map((item, i) => (
             <div key={i} title={item.label} style={{

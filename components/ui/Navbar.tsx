@@ -17,10 +17,11 @@ const Navbar = () => {
           {/* Logo */}
           <Link href="/" className="flex-shrink-0">
             <Image
-              src="/sia-globe-v2.png"
+              src="/sia-globe-v2.webp"
               alt="SIA Logo"
-              width={200}
-              height={200}
+              width={96}
+              height={96}
+              priority
               className="h-12 w-auto mix-blend-lighten"
             />
           </Link>
