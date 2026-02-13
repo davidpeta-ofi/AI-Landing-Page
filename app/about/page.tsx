@@ -91,6 +91,8 @@ function TetrisAnimation({ onSubtitleTrigger, onPieceChange }: { onSubtitleTrigg
   const [justLanded, setJustLanded] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
   const lastScrollTime = useRef(0);
+  const seenOnce = useRef(false);
+  const leftView = useRef(false);
 
   const placePiece = (pieceData: typeof tetrisPieces[0], row: number, col: number) => {
     setBoard((prevBoard) => {
@@ -183,9 +185,23 @@ function TetrisAnimation({ onSubtitleTrigger, onPieceChange }: { onSubtitleTrigg
 
       const rect = sectionRef.current.getBoundingClientRect();
       const windowHeight = window.innerHeight;
-      const isMidPage = rect.top <= windowHeight * 0.5 && rect.top >= windowHeight * 0.3;
+      const isInView = rect.top <= windowHeight * 0.5 && rect.top >= windowHeight * 0.3;
+      const isOutOfView = rect.top > windowHeight || rect.bottom < 0;
 
-      if (isMidPage && !sectionActivated) {
+      // First time in view: mark as seen but don't activate
+      if (isInView && !seenOnce.current) {
+        seenOnce.current = true;
+        return;
+      }
+
+      // Track when user scrolls away after first view
+      if (seenOnce.current && !leftView.current && isOutOfView) {
+        leftView.current = true;
+        return;
+      }
+
+      // Second time in view: activate
+      if (isInView && seenOnce.current && leftView.current) {
         setSectionActivated(true);
         setScrollLocked(true);
         dropPiece(0);
@@ -631,7 +647,7 @@ export default function AboutPage() {
     <div ref={containerRef} className="bg-[#0d0015] min-h-screen">
       <Navbar/>
 
-      <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-6 md:px-10 lg:px-16 min-h-screen flex items-center">
+      <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-6 md:px-10 lg:px-16 min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #0d0015 0%, #1a0a2e 50%, #2D1B4E 100%)' }}>
         <motion.div
           className="max-w-7xl mx-auto w-full"
           initial={{ opacity: 0, y: 50 }}
@@ -868,7 +884,7 @@ export default function AboutPage() {
         </motion.div>
       </section>
 
-      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 relative overflow-hidden min-h-screen flex items-center">
+      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 relative overflow-hidden min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #2D1B4E 0%, #3d2a5f 50%, #2D1B4E 100%)' }}>
         <div className="max-w-7xl mx-auto relative z-10 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
             <motion.div
@@ -951,7 +967,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 min-h-screen flex items-center">
+      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #2D1B4E 0%, #1a0a2e 50%, #2D1B4E 100%)' }}>
         <div className="max-w-6xl mx-auto w-full">
           <motion.div
             className="text-center mb-12 md:mb-20"
@@ -1019,7 +1035,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 min-h-screen flex items-center">
+      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #2D1B4E 0%, #3d2a5f 50%, #2D1B4E 100%)' }}>
         <div className="max-w-7xl mx-auto w-full">
           <motion.div
             className="text-center mb-10 md:mb-16"
@@ -1286,36 +1302,8 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 relative overflow-hidden min-h-screen flex items-center">
-        <div className="max-w-4xl mx-auto relative z-10 w-full">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-            {[
-              {
-                label: 'Vision',
-                text: 'A future where businesses of any size can act with the intelligence, intent, and speed once reserved for the few.',
-              },
-              {
-                label: 'Mission',
-                text: "To help growing businesses grow faster and operate smarter — by making tomorrow's technologies accessible today.",
-              },
-            ].map((item, idx) => (
-              <motion.div
-                key={idx}
-                className="p-8 md:p-12 rounded-3xl border border-white/8 bg-white/3 backdrop-blur-xl hover:bg-white/5 transition-all duration-300"
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.6, delay: idx * 0.2 }}
-              >
-                <div className="text-xs font-semibold tracking-widest text-[#E8B84A] uppercase mb-6">{item.label}</div>
-                <h3 className="text-2xl font-light text-white leading-relaxed">{item.text}</h3>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      <section id="cta" className="relative z-10 py-16 md:py-28 px-6 min-h-screen flex items-center">
+      <section id="cta" className="relative z-10 py-16 md:py-28 px-6 min-h-screen flex items-center" style={{ background: 'linear-gradient(180deg, #2D1B4E 0%, #1a0a2e 50%, #0d0015 100%)' }}>
         <div className="max-w-4xl mx-auto text-center w-full">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
