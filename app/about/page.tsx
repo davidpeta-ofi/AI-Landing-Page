@@ -605,32 +605,10 @@ export default function AboutPage() {
   const [currentPiece, setCurrentPiece] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Body background to prevent white flash + smooth scroll snap via CSS
+  // Body background to prevent white flash
   useEffect(() => {
-    document.body.style.background = '#0c0118';
-
-    const style = document.createElement('style');
-    style.textContent = `
-      html {
-        scroll-snap-type: y proximity;
-        scroll-behavior: smooth;
-      }
-      @media (prefers-reduced-motion: no-preference) {
-        html {
-          scroll-padding-top: 0px;
-        }
-      }
-      section[data-snap] {
-        scroll-snap-align: start;
-        scroll-snap-stop: normal;
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      document.body.style.background = '';
-      style.remove();
-    };
+    document.body.style.background = '#0d0015';
+    return () => { document.body.style.background = ''; };
   }, []);
 
   const showPanel = (panel: 'why' | 'how' | 'what') => {
@@ -650,10 +628,10 @@ export default function AboutPage() {
   };
 
   return (
-    <div ref={containerRef} className="min-h-screen" style={{ background: 'linear-gradient(160deg, #12041a 0%, #1e0835 30%, #2a0d4a 55%, #160228 80%, #0c0118 100%)' }}>
+    <div ref={containerRef} className="bg-[#0d0015] min-h-screen">
       <Navbar/>
 
-      <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-6 md:px-10 lg:px-16 min-h-screen flex items-center" data-snap>
+      <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-6 md:px-10 lg:px-16 min-h-screen flex items-center">
         <motion.div
           className="max-w-7xl mx-auto w-full"
           initial={{ opacity: 0, y: 50 }}
@@ -890,7 +868,7 @@ export default function AboutPage() {
         </motion.div>
       </section>
 
-      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 relative overflow-hidden min-h-screen flex items-center" data-snap>
+      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 relative overflow-hidden min-h-screen flex items-center">
         <div className="max-w-7xl mx-auto relative z-10 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
             <motion.div
@@ -973,7 +951,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 min-h-screen flex items-center" data-snap>
+      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 min-h-screen flex items-center">
         <div className="max-w-6xl mx-auto w-full">
           <motion.div
             className="text-center mb-12 md:mb-20"
@@ -1041,7 +1019,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 min-h-screen flex items-center" data-snap>
+      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 min-h-screen flex items-center">
         <div className="max-w-7xl mx-auto w-full">
           <motion.div
             className="text-center mb-10 md:mb-16"
@@ -1308,7 +1286,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 relative overflow-hidden min-h-screen flex items-center" data-snap>
+      <section className="py-16 md:py-32 px-6 md:px-10 lg:px-16 relative overflow-hidden min-h-screen flex items-center">
         <div className="max-w-4xl mx-auto relative z-10 w-full">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
             {[
@@ -1337,7 +1315,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section id="cta" className="relative z-10 py-16 md:py-28 px-6 min-h-screen flex items-center" data-snap>
+      <section id="cta" className="relative z-10 py-16 md:py-28 px-6 min-h-screen flex items-center">
         <div className="max-w-4xl mx-auto text-center w-full">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
