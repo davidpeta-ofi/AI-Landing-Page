@@ -1212,7 +1212,6 @@ function ProductsPage() {
                               <div className="p-5">
                                 <h4 className="text-white font-bold text-base mb-1">{product.name}</h4>
                                 <p className="text-white/60 text-xs mb-3">{product.tagline}</p>
-                                <div className="text-white font-bold text-xl mb-3">{product.price}</div>
                                 <motion.button
                                   className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer"
                                   style={{ background: `${product.color}20`, border: `1px solid ${product.color}40` }}
@@ -1970,7 +1969,7 @@ function ProductsPage() {
 
       {selectedProduct && (
         <div className="relative z-10 w-full">
-          {selectedProduct.ctaType === 'demo' ? <BookADemo /> : <WaitlistSection />}
+          {selectedCategory === 'category3' ? <WaitlistSection /> : <BookADemo />}
         </div>
       )}
 
