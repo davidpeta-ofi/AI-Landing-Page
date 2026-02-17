@@ -993,8 +993,8 @@ function ProductsPage() {
 
             {/* RIGHT SIDE - ORBITAL VISUALIZATION */}
             <div className="relative">
-              <div className="flex items-center justify-center" style={{ minHeight: '420px' }}>
-                <div className="relative" style={{ width: '420px', height: '420px' }}>
+              <div className="flex items-center justify-center" style={{ minHeight: '520px' }}>
+                <div className="relative" style={{ width: '520px', height: '520px' }}>
 
                   {/* Empty Central Circle */}
                   <motion.div
@@ -1030,7 +1030,7 @@ function ProductsPage() {
 
                   {/* Orbital rings */}
                   {[0, 1].map((ringIndex) => {
-                    const radius = 108 + ringIndex * 36;
+                    const radius = 135 + ringIndex * 45;
                     return (
                       <motion.div
                         key={ringIndex}
@@ -1059,7 +1059,7 @@ function ProductsPage() {
                   {filteredProducts.map((product, index) => {
                     const totalProducts = filteredProducts.length;
                     const angleOffset = (index / totalProducts) * Math.PI * 2 - Math.PI / 2;
-                    const radius = 140;
+                    const radius = 185;
                     const x = Math.cos(angleOffset) * radius;
                     const y = Math.sin(angleOffset) * radius;
                     const isHovered = hoveredProduct === product.id;
@@ -1070,8 +1070,8 @@ function ProductsPage() {
                         key={product.id}
                         className="absolute left-1/2 top-1/2"
                         style={{
-                          x: x - 52,
-                          y: y - 52,
+                          x: x - 68,
+                          y: y - 68,
                         }}
                         initial={{ opacity: 0, scale: 0 }}
                         animate={{ opacity: isDimmed ? 0.3 : 1, scale: 1 }}
@@ -1098,7 +1098,7 @@ function ProductsPage() {
                           product={product}
                           isActive={isHovered}
                           index={index}
-                          size={104}
+                          size={136}
                         />
                       </motion.div>
                     );
@@ -1117,8 +1117,8 @@ function ProductsPage() {
                     {filteredProducts.map((product, index) => {
                       const totalProducts = filteredProducts.length;
                       const angleOffset = (index / totalProducts) * Math.PI * 2 - Math.PI / 2;
-                      const radius = 140;
-                      const cx = 210;
+                      const radius = 185;
+                      const cx = 260;
                       const x1 = Math.cos(angleOffset) * radius + cx;
                       const y1 = Math.sin(angleOffset) * radius + cx;
 
@@ -1159,8 +1159,8 @@ function ProductsPage() {
                     {filteredProducts.map((product, index) => {
                       const totalProducts = filteredProducts.length;
                       const angleOffset = (index / totalProducts) * Math.PI * 2 - Math.PI / 2;
-                      const radius = 140;
-                      const cx = 210;
+                      const radius = 185;
+                      const cx = 260;
                       const x = Math.cos(angleOffset) * radius + cx;
                       const y = Math.sin(angleOffset) * radius + cx;
                       const isHighlighted = hoveredProduct === product.id;
@@ -2045,7 +2045,7 @@ function AgenticNode({ product, isActive, index, size = 144 }: {
           </div>
 
           <div className={`text-white ${fontSize} font-bold leading-tight px-1`}>
-            {product.name.split(' ').slice(0, 2).join(' ')}
+            {product.name.split(' ').slice(0, 6).join(' ')}
           </div>
 
           <div className="flex gap-1 mt-1.5">
