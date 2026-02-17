@@ -328,19 +328,17 @@ export default function OpseraLanding() {
           initial={{ opacity: 0, y: 60 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="relative z-10 w-full px-4 pb-32"
+          className="relative z-10 w-full px-4 pb-16 md:pb-32"
         >
           <div
-            style={{
-              perspective: '2000px',
-            }}
+            className="[perspective:2000px] md:[perspective:2000px]"
           >
             <div
-              className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_-20px_80px_rgba(139,92,246,0.15)]"
+              className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_-20px_80px_rgba(139,92,246,0.15)] h-[60vh] sm:h-[70vh] md:h-[85vh] max-h-[900px]
+                max-sm:[transform:rotateX(8deg)_translateY(-20px)]
+                sm:[transform:translateX(5%)_translateY(-40px)_rotateY(20deg)_rotateX(20deg)_rotateZ(-6deg)]
+                md:[transform:translateX(10%)_translateY(-80px)_translateZ(100px)_rotateY(35deg)_rotateX(36deg)_rotateZ(-12deg)_translateX(80px)]"
               style={{
-                height: '85vh',
-                maxHeight: '900px',
-                transform: 'translateX(10%) translateY(-80px) translateZ(100px) rotateY(35deg) rotateX(36deg) rotateZ(-12deg) translateX(80px)',
                 transformOrigin: 'center center',
               }}
             >
@@ -491,7 +489,7 @@ export default function OpseraLanding() {
               {/* Mobile: Single-card swipe carousel */}
               <div className="lg:hidden">
                 <div
-                  className="relative overflow-hidden touch-pan-y"
+                  className="relative overflow-hidden touch-pan-y px-2 py-3"
                   onTouchStart={(e) => {
                     const touch = e.touches[0];
                     (e.currentTarget as any)._touchStartX = touch.clientX;

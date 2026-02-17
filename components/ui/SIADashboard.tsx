@@ -143,7 +143,7 @@ export default function SIADashboard() {
       <div style={{ position:'absolute', bottom:-80, left:180, width:350, height:350, background:'radial-gradient(circle, rgba(245,166,35,0.04) 0%, transparent 70%)', pointerEvents:'none', animation:'dashGlow 5s ease-in-out infinite 1s' }} />
 
       {/* SIDEBAR */}
-      <div style={{ width: 52, background: C.bgSidebar, borderRight: `1px solid ${C.border}`, display:'flex', flexDirection:'column', alignItems:'center', padding:'12px 0', flexShrink:0, zIndex:2 }}>
+      <div className="w-10 sm:w-[52px]" style={{ background: C.bgSidebar, borderRight: `1px solid ${C.border}`, display:'flex', flexDirection:'column', alignItems:'center', padding:'12px 0', flexShrink:0, zIndex:2 }}>
         <img src="/sia-globe-v2.webp" alt="SIA" style={{ width:32, height:32, objectFit:'contain', marginBottom:20, mixBlendMode:'lighten' }} />
         <div style={{ display:'flex', flexDirection:'column', gap:4, flex:1 }}>
           {NAV.map((item, i) => (
@@ -188,9 +188,9 @@ export default function SIADashboard() {
         </div>
 
         {/* Body */}
-        <div style={{ flex:1, overflow:'hidden', padding:'12px 16px' }}>
+        <div className="flex-1 overflow-hidden p-2 sm:p-[12px_16px]">
           {/* STATS ROW */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:10, marginBottom:14 }}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-[10px] mb-3 sm:mb-[14px]">
             {STATS.map((s, i) => (
               <div key={i} style={{
                 padding:'10px 12px', borderRadius:10, background:C.bgCard, border:`1px solid ${C.border}`,
@@ -209,7 +209,7 @@ export default function SIADashboard() {
           </div>
 
           {/* TWO COLUMNS: Agents + Feed */}
-          <div style={{ display:'grid', gridTemplateColumns:'1.1fr 0.9fr', gap:10, marginBottom:14 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-[1.1fr_0.9fr] gap-2 sm:gap-[10px] mb-3 sm:mb-[14px]">
             {/* Agent Cards */}
             <div style={{ borderRadius:10, background:C.bgCard, border:`1px solid ${C.border}`, overflow:'hidden' }}>
               <div style={{ padding:'9px 12px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>

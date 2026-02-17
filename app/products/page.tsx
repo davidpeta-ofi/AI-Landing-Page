@@ -384,7 +384,7 @@ function ProductsPageContent() {
         <FloatingDots />
 
       {/* ─── Hero Section with Floating Dots ─── */}
-      <section className="relative z-10 min-h-[80vh] md:min-h-screen flex items-center justify-center px-4 sm:px-6 text-center pt-20 md:pt-24">
+      <section className="relative z-10 min-h-0 md:min-h-screen flex items-center justify-center px-4 sm:px-6 text-center pt-32 sm:pt-36 md:pt-24 pb-12 md:pb-0">
 
         <div className="max-w-4xl mx-auto relative z-10">
           <motion.div
@@ -392,7 +392,7 @@ function ProductsPageContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, ease: 'easeOut' }}
           >
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-white leading-tight mb-6 relative">
+            <h1 className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-white leading-tight mb-6 relative">
 
               {/* Golden blinking glow */}
               <motion.span
@@ -445,9 +445,9 @@ function ProductsPageContent() {
               />
 
               <span className="relative z-10">Intelligent solutions</span>
-              <div className="text-white/60 text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-3">for your</div>
+              <div className="text-white/60 text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-4 sm:mt-3">for your</div>
 
-              <div className="relative h-[1.4em] mt-4 overflow-hidden flex justify-center">
+              <div className="relative h-[1.4em] mt-5 sm:mt-4 overflow-hidden flex justify-center">
                 {dynamicWords.map((word, index) => (
                   <motion.span
                     key={word}
@@ -471,7 +471,7 @@ function ProductsPageContent() {
               </div>
             </h1>
 
-            <p className="text-base md:text-lg text-white/50 leading-relaxed max-w-2xl mx-auto mt-8 md:mt-10">
+            <p className="text-base md:text-lg text-white/50 leading-relaxed max-w-2xl mx-auto mt-10 md:mt-10">
               Autonomous AI agents designed for Marketing, HR, and Sales.
               Choose the perfect level of automation — from specialized tools
               to full-suite intelligent platforms.

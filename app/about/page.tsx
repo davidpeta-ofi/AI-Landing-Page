@@ -846,7 +846,7 @@ export default function AboutPage() {
               </AnimatePresence>
             </div>
 
-            <div className="relative h-[170px] sm:h-[210px] lg:h-64">
+            <div className="relative h-[170px] sm:h-[210px] lg:h-64 overflow-hidden">
               <div
                 className="absolute left-1/2 top-0 -translate-x-1/2 w-[450px] h-64 pt-12 overflow-hidden scale-[0.65] sm:scale-[0.8] lg:scale-100 origin-top"
                 style={{
@@ -1153,7 +1153,7 @@ export default function AboutPage() {
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center min-h-[400px] lg:min-h-[500px]">
-            <div className="relative h-[170px] sm:h-[210px] lg:h-64">
+            <div className="relative h-[170px] sm:h-[210px] lg:h-64 overflow-hidden">
               <div
                 className="absolute left-1/2 top-0 -translate-x-1/2 w-[450px] h-64 pt-12 overflow-hidden scale-[0.65] sm:scale-[0.8] lg:scale-100 origin-top"
                 style={{
