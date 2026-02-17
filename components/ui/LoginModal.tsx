@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 
+
 function AgenticBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -49,7 +50,7 @@ function AgenticBackground() {
       t += 0.012;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    
+      
       const bg = ctx.createRadialGradient(canvas.width*.5, canvas.height*.4, 0, canvas.width*.5, canvas.height*.4, canvas.width*.75);
       bg.addColorStop(0, 'rgba(14,12,32,1)');
       bg.addColorStop(0.5, 'rgba(8,7,20,1)');
@@ -57,14 +58,14 @@ function AgenticBackground() {
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-   
+      
       ctx.fillStyle = 'rgba(240,184,73,0.055)';
       for (let gx = 0; gx < canvas.width; gx += 48)
         for (let gy = 0; gy < canvas.height; gy += 48) {
           ctx.beginPath(); ctx.arc(gx, gy, 0.6, 0, Math.PI*2); ctx.fill();
         }
 
-    
+      
       scanLines.forEach(sl => {
         sl.y += sl.speed;
         if (sl.y > canvas.height) sl.y = 0;
@@ -98,7 +99,7 @@ function AgenticBackground() {
       ctx.beginPath(); ctx.arc(blipX, blipY, 2.5, 0, Math.PI*2);
       ctx.fillStyle = `rgba(240,184,73,${Math.abs(Math.sin(t*3))*0.6+0.2})`; ctx.fill();
 
-      
+     
       ctx.beginPath(); ctx.arc(radar2.x, radar2.y, radar2.radius, 0, Math.PI*2);
       ctx.strokeStyle='rgba(240,184,73,0.08)'; ctx.lineWidth=0.8; ctx.stroke();
       const r2a = -radar.angle*0.6;
@@ -109,7 +110,7 @@ function AgenticBackground() {
         ctx.fillStyle = `rgba(240,184,73,${(1-i/20)*0.06})`; ctx.fill();
       }
 
-   
+     
       nodes.forEach(n => {
         n.x+=n.vx; n.y+=n.vy; n.pulse+=0.025;
         if(n.x<0) n.x=canvas.width; if(n.x>canvas.width) n.x=0;
@@ -128,7 +129,7 @@ function AgenticBackground() {
         ctx.fillStyle=`rgba(240,184,73,${Math.abs(Math.sin(n.pulse))*0.5+0.12})`; ctx.fill();
       });
 
-   
+     
       ctx.font = "9px 'DM Mono', monospace";
       hexLabels.forEach(h => {
         h.y+=h.vy;
@@ -172,7 +173,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   useEffect(() => {
     if (isOpen) {
-  
+      
       setPhase('entering');
       setTimeout(() => setPhase('visible'), 50);
       document.body.style.overflow = 'hidden';
@@ -206,7 +207,17 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     else if (password.length < 6) errs.password = 'Incorrect password';
     if (Object.keys(errs).length) { setErrors(errs); triggerShake(); return; }
     setLoading(true);
-    setTimeout(() => setLoading(false), 1600);
+    setTimeout(() => {
+      setLoading(false);
+      onClose();
+      
+      setTimeout(() => {
+        const dashboard = document.getElementById('dashboard');
+        if (dashboard) {
+          dashboard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 380);
+    }, 1400);
   };
 
   const handleForgot = (e: React.FormEvent) => {
@@ -478,7 +489,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='rgba(240,184,73,0.06)';(e.currentTarget as HTMLElement).style.color='rgba(240,184,73,0.4)';}}
           >✕</button>
 
-          {/* ── content ── */}
+          {}
           <div style={{ position:'relative', zIndex:1 }}>
 
             {}
@@ -579,7 +590,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               </div>
             )}
 
-            {}
+            {/}
             {view === 'register' && (
               <div className="lm-view">
                 <button className="lm-back" onClick={()=>switchView('login')}>
