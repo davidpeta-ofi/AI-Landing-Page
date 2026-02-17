@@ -206,7 +206,7 @@ export default function Chatbot() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed bottom-24 right-6 z-50 w-[380px] max-h-[520px] flex flex-col rounded-2xl overflow-hidden border"
+            className="fixed inset-0 z-50 w-full h-full flex flex-col overflow-hidden border md:inset-auto md:bottom-24 md:right-6 md:w-[380px] md:max-h-[520px] md:rounded-2xl"
             style={{
               backgroundColor: '#1a1a2e',
               borderColor: 'rgba(107, 78, 155, 0.3)',
@@ -224,13 +224,20 @@ export default function Chatbot() {
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#E8B84A] to-[#E8A87C] flex items-center justify-center">
                 <MessageCircle className="w-5 h-5 text-[#2D1B4E]" />
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-white text-sm font-semibold">SIA Assistant</p>
               </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="md:hidden w-8 h-8 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                aria-label="Close chat"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-[300px] chatbot-scrollbar">
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0 md:min-h-[300px] chatbot-scrollbar">
               {messages.map((msg) => (
                 <motion.div
                   key={msg.id}
