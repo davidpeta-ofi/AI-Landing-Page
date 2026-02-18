@@ -85,6 +85,7 @@ const Navbar = () => {
   const handleLoginSuccess = (name: string, email: string) => {
     setUser({ name, email });
     setLoginOpen(false);
+    router.push('/platform');
   };
 
   const handleLogout = () => {
