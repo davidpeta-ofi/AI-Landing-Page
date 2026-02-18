@@ -13,9 +13,9 @@ interface UploadFile {
   ext: string;
   status: FileStatus;
   progress: number;
-  url?: string;       // set after successful upload
-  error?: string;     // set if upload fails
-  raw: File;          // original File object for sending
+  url?: string;
+  error?: string;
+  raw: File;
 }
 
 /* ─── config per agent ──────────────────────────────────────────── */
@@ -119,12 +119,23 @@ function ExtBadge({ name }: { name: string }) {
   );
 }
 
+/* ─── back navigation ────────────────────────────────────────────── */
+// Uses router.push('/') instead of router.back() so the page does a fresh
+// render with the session still active. router.back() was restoring a cached
+// pre-login snapshot of the page, making the user appear logged out.
+function useSmartBack() {
+  const router = useRouter();
+  return useCallback(() => {
+    router.push('/');
+  }, [router]);
+}
+
 /* ═══════════════════════════════════════════════════════════════ */
 export default function AgentPage({ agent }: { agent: AgentType }) {
-  const cfg = AGENT_CONFIG[agent];
-  const router = useRouter();
+  const cfg    = AGENT_CONFIG[agent];
+  const goBack = useSmartBack();
 
-  const [files, setFiles]       = useState<UploadFile[]>([]);
+  const [files, setFiles]     = useState<UploadFile[]>([]);
   const [dragging, setDragging] = useState(false);
   const [mounted, setMounted]   = useState(false);
   const [toast, setToast]       = useState<{ msg: string; type: 'ok' | 'err' } | null>(null);
@@ -133,17 +144,16 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
 
   useEffect(() => { setTimeout(() => setMounted(true), 60); }, []);
 
-  /* ── toast helper ── */
+  /* ── toast ── */
   const showToast = (msg: string, type: 'ok' | 'err' = 'ok') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
   };
 
-  /* ── real upload via fetch + XHR progress simulation ── */
-  const uploadFile = useCallback(async (uploadFile: UploadFile) => {
-    const id = uploadFile.id;
+  /* ── upload ── */
+  const uploadFile = useCallback(async (file: UploadFile) => {
+    const id = file.id;
 
-    // Kick off visual progress animation immediately
     let prog = 0;
     const iv = setInterval(() => {
       prog += Math.random() * 12 + 5;
@@ -160,16 +170,13 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
     try {
       const formData = new FormData();
       formData.append('agent', agent);
-      formData.append('files', uploadFile.raw, uploadFile.name);
+      formData.append('files', file.raw, file.name);
 
       const res  = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
-
       clearInterval(iv);
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Upload failed');
-      }
+      if (!res.ok || !data.success) throw new Error(data.error || 'Upload failed');
 
       const saved = data.files?.[0];
       setFiles(f => f.map(x => x.id === id
@@ -182,15 +189,15 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
         ? { ...x, progress: 0, status: 'error', error: err.message }
         : x
       ));
-      showToast(`Failed: ${uploadFile.name}`, 'err');
+      showToast(`Failed: ${file.name}`, 'err');
     }
   }, [agent]);
 
-  /* ── add files to queue and start uploading ── */
+  /* ── add files ── */
   const addFiles = useCallback((raw: FileList | null) => {
     if (!raw) return;
 
-    const maxBytes = cfg.maxSizeMB * 1024 * 1024;
+    const maxBytes    = cfg.maxSizeMB * 1024 * 1024;
     const allowedExts = cfg.accepts.split(',').map(e => e.trim().replace('.', '').toLowerCase());
 
     Array.from(raw).forEach(file => {
@@ -216,13 +223,11 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
       };
 
       setFiles(f => [...f, newFile]);
-
-      // Start uploading after a tiny delay (lets React render the pending state first)
       setTimeout(() => uploadFile(newFile), 120);
     });
   }, [cfg, uploadFile]);
 
-  /* ── drag handlers ── */
+  /* ── drag ── */
   const onDragOver  = (e: React.DragEvent) => { e.preventDefault(); setDragging(true); };
   const onDragLeave = () => setDragging(false);
   const onDrop      = (e: React.DragEvent) => {
@@ -231,8 +236,7 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
     addFiles(e.dataTransfer.files);
   };
 
-  const removeFile = (id: string) =>
-    setFiles(f => f.filter(x => x.id !== id));
+  const removeFile = (id: string) => setFiles(f => f.filter(x => x.id !== id));
 
   const retryFile = (file: UploadFile) => {
     setFiles(f => f.map(x => x.id === file.id
@@ -256,17 +260,15 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
           from { opacity:0; transform:translateY(20px); }
           to   { opacity:1; transform:translateY(0); }
         }
-        @keyframes ap-spin { to { transform:rotate(360deg) } }
+        @keyframes ap-spin { to { transform:rotate(360deg); } }
         @keyframes ap-pulse {
           0%,100% { opacity:0.4; }
           50%      { opacity:1; }
         }
         @keyframes ap-toastIn {
           from { opacity:0; transform:translateY(12px) scale(0.97); }
-          to   { opacity:1; transform:translateY(0)    scale(1); }
+          to   { opacity:1; transform:translateY(0) scale(1); }
         }
-
-        /* ── Agentic background effects ── */
         @keyframes ap-float {
           0%, 100% { transform: translate(0, 0); }
           33%      { transform: translate(30px, -30px); }
@@ -282,217 +284,165 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
         }
 
         .ap-wrap {
-          min-height:100vh;
-          background:radial-gradient(ellipse at 60% 20%, #0d0c28 0%, #080718 45%, #050412 100%);
-          font-family:'DM Mono',monospace;
-          padding-top:88px;
-          position:relative;
-          overflow:hidden;
+          min-height: 100vh;
+          background: radial-gradient(ellipse at 60% 20%, #0d0c28 0%, #080718 45%, #050412 100%);
+          font-family: 'DM Mono', monospace;
+          padding-top: 88px;
+          position: relative;
+          overflow: hidden;
         }
-
-        /* Animated grid overlay */
         .ap-bg-grid {
-          position:absolute;
-          inset:0;
+          position: absolute; inset: 0;
           background-image:
             linear-gradient(rgba(240,184,73,0.04) 1px, transparent 1px),
             linear-gradient(90deg, rgba(240,184,73,0.04) 1px, transparent 1px);
           background-size: 60px 60px;
           animation: ap-gridPulse 4s ease-in-out infinite;
-          pointer-events:none;
-          z-index:1;
+          pointer-events: none; z-index: 1;
         }
-
-        /* Floating particles container */
-        .ap-particles {
-          position:absolute;
-          inset:0;
-          pointer-events:none;
-          z-index:1;
-        }
+        .ap-particles { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
         .ap-particle {
-          position:absolute;
-          width:4px;
-          height:4px;
-          border-radius:50%;
-          background:rgba(240,184,73,0.4);
+          position: absolute; width: 4px; height: 4px; border-radius: 50%;
+          background: rgba(240,184,73,0.4);
           animation: ap-particleGlow 3s ease-in-out infinite;
         }
-        .ap-particle.large {
-          width:6px;
-          height:6px;
-        }
-        .ap-inner { max-width:780px; margin:0 auto; padding:48px 24px 80px; position:relative; z-index:10; }
+        .ap-particle.large { width: 6px; height: 6px; }
+        .ap-inner { max-width: 780px; margin: 0 auto; padding: 48px 24px 80px; position: relative; z-index: 10; }
 
-        /* header */
-        .ap-header { margin-bottom:40px; }
+        .ap-header { margin-bottom: 40px; }
         .ap-tag {
-          display:inline-flex; align-items:center; gap:6px;
-          font-size:9.5px; color:rgba(240,184,73,0.5);
-          letter-spacing:0.16em; text-transform:uppercase; margin-bottom:14px;
+          display: inline-flex; align-items: center; gap: 6px;
+          font-size: 9.5px; color: rgba(240,184,73,0.5);
+          letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 14px;
         }
-        .ap-tag-dot { width:5px; height:5px; border-radius:50%; background:#f0b849; animation:ap-pulse 2s ease-in-out infinite; }
+        .ap-tag-dot { width: 5px; height: 5px; border-radius: 50%; background: #f0b849; animation: ap-pulse 2s ease-in-out infinite; }
         .ap-title {
-          font-size:28px; font-weight:700; color:#f0ead8;
-          letter-spacing:-0.02em; margin:0 0 8px; display:flex; align-items:center; gap:12px;
+          font-size: 28px; font-weight: 700; color: #f0ead8;
+          letter-spacing: -0.02em; margin: 0 0 8px; display: flex; align-items: center; gap: 12px;
         }
         .ap-title-icon {
-          width:44px; height:44px; border-radius:11px;
-          background:rgba(240,184,73,0.1); border:1px solid rgba(240,184,73,0.25);
-          display:flex; align-items:center; justify-content:center; color:#f0b849; flex-shrink:0;
+          width: 44px; height: 44px; border-radius: 11px;
+          background: rgba(240,184,73,0.1); border: 1px solid rgba(240,184,73,0.25);
+          display: flex; align-items: center; justify-content: center; color: #f0b849; flex-shrink: 0;
         }
-        .ap-sub { font-size:13px; color:rgba(200,185,150,0.45); line-height:1.6; margin:0; letter-spacing:0.02em; }
+        .ap-sub { font-size: 13px; color: rgba(200,185,150,0.45); line-height: 1.6; margin: 0; letter-spacing: 0.02em; }
 
-        /* drop zone */
         .ap-dropzone {
-          border:1.5px dashed rgba(240,184,73,0.25);
-          border-radius:16px;
-          background:rgba(240,184,73,0.025);
-          padding:44px 24px;
-          text-align:center;
-          cursor:pointer;
-          transition:border-color 0.2s, background 0.2s;
-          position:relative; overflow:hidden;
-          margin-bottom:16px;
+          border: 1.5px dashed rgba(240,184,73,0.25); border-radius: 16px;
+          background: rgba(240,184,73,0.025); padding: 44px 24px;
+          text-align: center; cursor: pointer;
+          transition: border-color 0.2s, background 0.2s;
+          position: relative; overflow: hidden; margin-bottom: 16px;
         }
         .ap-dropzone:hover, .ap-dropzone.drag {
-          border-color:rgba(240,184,73,0.55);
-          background:rgba(240,184,73,0.06);
+          border-color: rgba(240,184,73,0.55); background: rgba(240,184,73,0.06);
         }
-        .ap-dropzone.drag { border-style:solid; }
+        .ap-dropzone.drag { border-style: solid; }
         .ap-dz-icon {
-          width:52px; height:52px; border-radius:14px; margin:0 auto 16px;
-          background:rgba(240,184,73,0.08); border:1px solid rgba(240,184,73,0.2);
-          display:flex; align-items:center; justify-content:center; color:rgba(240,184,73,0.6);
+          width: 52px; height: 52px; border-radius: 14px; margin: 0 auto 16px;
+          background: rgba(240,184,73,0.08); border: 1px solid rgba(240,184,73,0.2);
+          display: flex; align-items: center; justify-content: center; color: rgba(240,184,73,0.6);
         }
-        .ap-dz-title  { font-size:15px; color:#f0ead8; font-weight:500; margin-bottom:6px; letter-spacing:0.01em; }
-        .ap-dz-sub    { font-size:11.5px; color:rgba(200,185,150,0.38); letter-spacing:0.03em; margin-bottom:20px; }
+        .ap-dz-title  { font-size: 15px; color: #f0ead8; font-weight: 500; margin-bottom: 6px; letter-spacing: 0.01em; }
+        .ap-dz-sub    { font-size: 11.5px; color: rgba(200,185,150,0.38); letter-spacing: 0.03em; margin-bottom: 20px; }
         .ap-browse-btn {
-          display:inline-flex; align-items:center; gap:6px;
-          padding:9px 20px; border-radius:8px;
-          background:linear-gradient(135deg,#e8a835,#f5d070);
-          color:#0a0a1a; font-family:'DM Mono',monospace;
-          font-size:11.5px; font-weight:500; letter-spacing:0.07em; text-transform:uppercase;
-          border:none; cursor:pointer;
-          transition:box-shadow 0.2s, transform 0.1s;
+          display: inline-flex; align-items: center; gap: 6px; padding: 9px 20px; border-radius: 8px;
+          background: linear-gradient(135deg,#e8a835,#f5d070); color: #0a0a1a;
+          font-family: 'DM Mono', monospace; font-size: 11.5px; font-weight: 500;
+          letter-spacing: 0.07em; text-transform: uppercase; border: none; cursor: pointer;
+          transition: box-shadow 0.2s, transform 0.1s;
         }
-        .ap-browse-btn:hover { box-shadow:0 4px 18px rgba(240,184,73,0.3); transform:translateY(-1px); }
-        .ap-hint { font-size:10px; color:rgba(200,185,150,0.28); margin-top:12px; letter-spacing:0.04em; }
+        .ap-browse-btn:hover { box-shadow: 0 4px 18px rgba(240,184,73,0.3); transform: translateY(-1px); }
+        .ap-hint { font-size: 10px; color: rgba(200,185,150,0.28); margin-top: 12px; letter-spacing: 0.04em; }
 
-        /* cloud row */
-        .ap-cloud-row { display:flex; gap:10px; margin-bottom:28px; flex-wrap:wrap; }
+        .ap-cloud-row { display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
         .ap-cloud-btn {
-          flex:1; min-width:130px; display:flex; align-items:center; gap:8px;
-          padding:10px 14px; border-radius:10px;
-          background:rgba(255,255,255,0.03); border:1px solid rgba(240,184,73,0.15);
-          cursor:pointer; color:rgba(230,218,190,0.7);
-          font-family:'DM Mono',monospace; font-size:11.5px; letter-spacing:0.03em;
-          transition:background 0.15s, border-color 0.15s, color 0.15s;
+          flex: 1; min-width: 130px; display: flex; align-items: center; gap: 8px;
+          padding: 10px 14px; border-radius: 10px;
+          background: rgba(255,255,255,0.03); border: 1px solid rgba(240,184,73,0.15);
+          cursor: pointer; color: rgba(230,218,190,0.7);
+          font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: 0.03em;
+          transition: background 0.15s, border-color 0.15s, color 0.15s;
         }
-        .ap-cloud-btn:hover { background:rgba(255,255,255,0.06); border-color:rgba(240,184,73,0.3); color:#f0ead8; }
+        .ap-cloud-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(240,184,73,0.3); color: #f0ead8; }
 
-        /* divider */
-        .ap-or { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
-        .ap-or-line { flex:1; height:1px; background:rgba(240,184,73,0.1); }
-        .ap-or-text { font-size:10px; color:rgba(240,184,73,0.3); letter-spacing:0.12em; text-transform:uppercase; }
+        .ap-or { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+        .ap-or-line { flex: 1; height: 1px; background: rgba(240,184,73,0.1); }
+        .ap-or-text { font-size: 10px; color: rgba(240,184,73,0.3); letter-spacing: 0.12em; text-transform: uppercase; }
 
-        /* file list */
-        .ap-file-list  { display:flex; flex-direction:column; gap:8px; }
-        .ap-file-item  {
-          display:flex; align-items:center; gap:12px;
-          padding:12px 14px; border-radius:11px;
-          background:rgba(255,255,255,0.03); border:1px solid rgba(240,184,73,0.12);
-          animation:ap-fadeUp 0.25s ease both;
-          transition:border-color 0.2s;
+        .ap-file-list { display: flex; flex-direction: column; gap: 8px; }
+        .ap-file-item {
+          display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 11px;
+          background: rgba(255,255,255,0.03); border: 1px solid rgba(240,184,73,0.12);
+          animation: ap-fadeUp 0.25s ease both; transition: border-color 0.2s;
         }
-        .ap-file-item.error { border-color:rgba(255,80,80,0.25); background:rgba(255,80,80,0.03); }
-        .ap-file-name  { font-size:12.5px; color:#f0ead8; letter-spacing:0.01em; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:320px; }
-        .ap-file-meta  { font-size:10px; color:rgba(200,185,150,0.38); letter-spacing:0.03em; }
-        .ap-file-error { font-size:10px; color:rgba(255,100,100,0.65); letter-spacing:0.03em; margin-top:2px; }
+        .ap-file-item.error { border-color: rgba(255,80,80,0.25); background: rgba(255,80,80,0.03); }
+        .ap-file-name  { font-size: 12.5px; color: #f0ead8; letter-spacing: 0.01em; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
+        .ap-file-meta  { font-size: 10px; color: rgba(200,185,150,0.38); letter-spacing: 0.03em; }
+        .ap-file-error { font-size: 10px; color: rgba(255,100,100,0.65); letter-spacing: 0.03em; margin-top: 2px; }
 
-        /* progress */
-        .ap-prog-track { height:3px; background:rgba(240,184,73,0.1); border-radius:2px; margin-top:6px; overflow:hidden; width:100%; }
-        .ap-prog-fill  { height:100%; border-radius:2px; background:linear-gradient(90deg,#e8a835,#f5d070); transition:width 0.18s linear; }
+        .ap-prog-track { height: 3px; background: rgba(240,184,73,0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; width: 100%; }
+        .ap-prog-fill  { height: 100%; border-radius: 2px; background: linear-gradient(90deg,#e8a835,#f5d070); transition: width 0.18s linear; }
 
-        /* badges */
-        .ap-badge { font-size:9px; padding:2px 7px; border-radius:4px; letter-spacing:0.08em; text-transform:uppercase; flex-shrink:0; }
-        .ap-badge.uploading { background:rgba(240,184,73,0.1); color:rgba(240,184,73,0.7); }
-        .ap-badge.done      { background:rgba(74,222,128,0.1); color:#4ade80; }
-        .ap-badge.error     { background:rgba(255,80,80,0.1); color:#ff8080; }
+        .ap-badge { font-size: 9px; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.08em; text-transform: uppercase; flex-shrink: 0; }
+        .ap-badge.uploading { background: rgba(240,184,73,0.1); color: rgba(240,184,73,0.7); }
+        .ap-badge.done      { background: rgba(74,222,128,0.1); color: #4ade80; }
+        .ap-badge.error     { background: rgba(255,80,80,0.1); color: #ff8080; }
 
-        /* icon buttons */
         .ap-icon-btn {
-          background:none; border:none; cursor:pointer; padding:4px;
-          color:rgba(200,185,150,0.25); transition:color 0.15s; flex-shrink:0; line-height:1;
+          background: none; border: none; cursor: pointer; padding: 4px;
+          color: rgba(200,185,150,0.25); transition: color 0.15s; flex-shrink: 0; line-height: 1;
         }
-        .ap-icon-btn:hover { color:rgba(240,184,73,0.7); }
-        .ap-icon-btn.remove:hover { color:rgba(255,80,80,0.7); }
+        .ap-icon-btn:hover { color: rgba(240,184,73,0.7); }
+        .ap-icon-btn.remove:hover { color: rgba(255,80,80,0.7); }
 
-        /* back link */
         .ap-back {
-          display:inline-flex; align-items:center; gap:6px;
-          background:none; border:none; cursor:pointer; padding:0; margin-bottom:32px;
-          font-family:'DM Mono',monospace; font-size:10.5px;
-          color:rgba(240,184,73,0.4); letter-spacing:0.08em; text-transform:uppercase;
-          transition:color 0.15s;
+          display: inline-flex; align-items: center; gap: 6px;
+          background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 32px;
+          font-family: 'DM Mono', monospace; font-size: 10.5px;
+          color: rgba(240,184,73,0.4); letter-spacing: 0.08em; text-transform: uppercase;
+          transition: color 0.15s;
         }
-        .ap-back:hover { color:rgba(240,184,73,0.75); }
+        .ap-back:hover { color: rgba(240,184,73,0.75); }
 
-        /* section label */
         .ap-section-label {
-          font-size:9.5px; color:rgba(240,184,73,0.45); letter-spacing:0.14em; text-transform:uppercase;
-          margin-bottom:10px; display:flex; align-items:center; gap:8px;
+          font-size: 9.5px; color: rgba(240,184,73,0.45); letter-spacing: 0.14em; text-transform: uppercase;
+          margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
         }
-        .ap-section-label::after { content:''; flex:1; height:1px; background:rgba(240,184,73,0.1); }
+        .ap-section-label::after { content: ''; flex: 1; height: 1px; background: rgba(240,184,73,0.1); }
 
-        /* process button */
         .ap-process-btn {
-          margin-top:24px; width:100%; padding:13px;
-          border-radius:10px; border:none; cursor:pointer;
-          background:linear-gradient(135deg,#e8a835,#f5d070);
-          color:#0a0a1a; font-family:'DM Mono',monospace;
-          font-size:12px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase;
-          transition:box-shadow 0.2s, transform 0.1s;
-          animation:ap-fadeUp 0.3s ease both;
+          margin-top: 24px; width: 100%; padding: 13px; border-radius: 10px; border: none; cursor: pointer;
+          background: linear-gradient(135deg,#e8a835,#f5d070); color: #0a0a1a;
+          font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500;
+          letter-spacing: 0.08em; text-transform: uppercase;
+          transition: box-shadow 0.2s, transform 0.1s; animation: ap-fadeUp 0.3s ease both;
         }
-        .ap-process-btn:hover {
-          box-shadow:0 6px 24px rgba(240,184,73,0.35);
-          transform:translateY(-1px);
-        }
+        .ap-process-btn:hover { box-shadow: 0 6px 24px rgba(240,184,73,0.35); transform: translateY(-1px); }
 
-        /* toast */
         .ap-toast {
-          position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
-          padding:10px 18px; border-radius:10px; z-index:9999;
-          font-family:'DM Mono',monospace; font-size:12px; letter-spacing:0.03em;
-          animation:ap-toastIn 0.25s ease both;
-          pointer-events:none;
+          position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+          padding: 10px 18px; border-radius: 10px; z-index: 9999;
+          font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.03em;
+          animation: ap-toastIn 0.25s ease both; pointer-events: none;
         }
-        .ap-toast.ok  { background:rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.25); color:#4ade80; }
-        .ap-toast.err { background:rgba(255,80,80,0.08); border:1px solid rgba(255,80,80,0.25); color:#ff8080; }
+        .ap-toast.ok  { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.25); color: #4ade80; }
+        .ap-toast.err { background: rgba(255,80,80,0.08); border: 1px solid rgba(255,80,80,0.25); color: #ff8080; }
 
-        /* spinner */
-        .ap-spin { animation:ap-spin 0.9s linear infinite; }
+        .ap-spin { animation: ap-spin 0.9s linear infinite; }
       `}</style>
 
-      {/* toast */}
-      {toast && (
-        <div className={`ap-toast ${toast.type}`}>{toast.msg}</div>
-      )}
+      {toast && <div className={`ap-toast ${toast.type}`}>{toast.msg}</div>}
 
       <div className="ap-wrap">
-        {/* ── Animated grid background ── */}
         <div className="ap-bg-grid" />
-
-        {/* ── Floating particles ── */}
         <div className="ap-particles">
           {[...Array(20)].map((_, i) => {
-            const size = Math.random() > 0.7 ? 'large' : '';
-            const left = Math.random() * 100;
-            const top  = Math.random() * 100;
-            const delay = Math.random() * 8;
+            const size     = Math.random() > 0.7 ? 'large' : '';
+            const left     = Math.random() * 100;
+            const top      = Math.random() * 100;
+            const delay    = Math.random() * 8;
             const duration = 12 + Math.random() * 8;
-            
             return (
               <div
                 key={i}
@@ -509,8 +459,8 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
 
         <div className="ap-inner" style={{ opacity: mounted ? 1 : 0, transition: 'opacity 0.3s' }}>
 
-          {/* back */}
-          <button className="ap-back" onClick={() => router.back()}>
+          {/* back — pushes to / so session is preserved */}
+          <button className="ap-back" onClick={goBack}>
             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 5l-7 7 7 7"/>
             </svg>
@@ -530,11 +480,10 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
             <p className="ap-sub">{cfg.subtitle}</p>
           </div>
 
-          {/* upload section */}
+          {/* upload */}
           <div style={{ animation: mounted ? 'ap-fadeUp 0.4s ease 0.1s both' : 'none' }}>
             <div className="ap-section-label">upload document</div>
 
-            {/* drop zone */}
             <div
               className={`ap-dropzone${dragging ? ' drag' : ''}`}
               onDragOver={onDragOver}
@@ -555,12 +504,8 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                 </svg>
               </div>
-              <div className="ap-dz-title">
-                {dragging ? 'Drop files here' : 'Drag & drop files here'}
-              </div>
-              <div className="ap-dz-sub">
-                or click to browse — up to {cfg.maxSizeMB} MB per file
-              </div>
+              <div className="ap-dz-title">{dragging ? 'Drop files here' : 'Drag & drop files here'}</div>
+              <div className="ap-dz-sub">or click to browse — up to {cfg.maxSizeMB} MB per file</div>
               <button
                 className="ap-browse-btn"
                 onClick={e => { e.stopPropagation(); inputRef.current?.click(); }}
@@ -573,14 +518,12 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
               <div className="ap-hint">{cfg.hint}</div>
             </div>
 
-            {/* cloud divider */}
             <div className="ap-or">
-              <div className="ap-or-line"/>
+              <div className="ap-or-line" />
               <span className="ap-or-text">or import from cloud</span>
-              <div className="ap-or-line"/>
+              <div className="ap-or-line" />
             </div>
 
-            {/* cloud buttons */}
             <div className="ap-cloud-row">
               {CLOUD.map(c => (
                 <button key={c.id} className="ap-cloud-btn" onClick={() => cloudClick(c.label)}>
@@ -611,29 +554,22 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
                     style={{ animationDelay: `${i * 0.04}s` }}
                   >
                     <ExtBadge name={f.name} />
-
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="ap-file-name">{f.name}</div>
                       <div className="ap-file-meta">{formatBytes(f.size)}</div>
                       {f.status === 'error' && f.error && (
                         <div className="ap-file-error">⚠ {f.error}</div>
                       )}
-                      {f.status === 'uploading' && (
+                      {(f.status === 'uploading' || f.status === 'done') && (
                         <div className="ap-prog-track">
-                          <div className="ap-prog-fill" style={{ width: `${f.progress}%` }} />
-                        </div>
-                      )}
-                      {f.status === 'done' && (
-                        <div className="ap-prog-track">
-                          <div className="ap-prog-fill" style={{ width: '100%' }} />
+                          <div className="ap-prog-fill" style={{ width: f.status === 'done' ? '100%' : `${f.progress}%` }} />
                         </div>
                       )}
                     </div>
 
-                    {/* status badge */}
                     {f.status === 'uploading' && (
                       <span className="ap-badge uploading">
-                        <svg className="ap-spin" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ display:'inline', marginRight:4, verticalAlign:'middle' }}>
+                        <svg className="ap-spin" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }}>
                           <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/>
                         </svg>
                         {f.progress}%
@@ -642,7 +578,6 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
                     {f.status === 'done'  && <span className="ap-badge done">✓ ready</span>}
                     {f.status === 'error' && <span className="ap-badge error">failed</span>}
 
-                    {/* retry on error */}
                     {f.status === 'error' && (
                       <button className="ap-icon-btn" title="Retry" onClick={() => retryFile(f)}>
                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -651,7 +586,6 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
                       </button>
                     )}
 
-                    {/* remove */}
                     <button className="ap-icon-btn remove" title="Remove" onClick={() => removeFile(f.id)}>
                       <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -661,7 +595,6 @@ export default function AgentPage({ agent }: { agent: AgentType }) {
                 ))}
               </div>
 
-              {/* process button */}
               {doneCount > 0 && (
                 <button
                   className="ap-process-btn"

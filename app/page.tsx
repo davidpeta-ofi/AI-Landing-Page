@@ -343,8 +343,8 @@ export default function OpseraLanding() {
               }}
             >
               <div id="dashboard">
-  <SIADashboard />
-</div>
+                     <SIADashboard />
+              </div>
             </div>
           </div>
         </motion.div>

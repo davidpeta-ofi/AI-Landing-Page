@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-const TABS = ['Overview', 'Activity', 'Settings'];
+const TABS = ['Overview', 'Activity'];
 
 const STATS = [
   { label: 'Documents Processed', value: '1,284', delta: '+12 this week' },
-  { label: 'Agents Used', value: '3', delta: 'HR · Marketing · Legal' },
-  { label: 'Plan', value: 'Pro', delta: 'Renews Jan 15, 2026', isSubscription: true, badge: 'ACTIVE' },
-  { label: 'API Calls', value: '8,420', delta: '1,580 remaining this month', isSubscription: true },
+  { label: 'Agents Used', value: '2', delta: 'HR · Marketing' },
+  { label: 'HR Agent', value: 'Pro', delta: 'Renews Jan 15, 2026', isSubscription: true, badge: 'ACTIVE' },
+  { label: 'Marketing Agent', value: 'Pro', delta: 'Renews Jan 15, 2026', isSubscription: true, badge: 'ACTIVE' },
 ];
 
 const RECENT = [
@@ -23,7 +23,6 @@ const RECENT = [
 const TYPE_COLOR: Record<string, string> = {
   HR: '#f0b849',
   Marketing: '#a78bfa',
-  Legal: '#34d399',
 };
 
 export default function ProfilePage() {
@@ -38,7 +37,6 @@ export default function ProfilePage() {
 
   useEffect(() => { setTimeout(() => setMounted(true), 60); }, []);
 
-  // animate scan line on avatar
   useEffect(() => {
     const iv = setInterval(() => setScanLine(p => (p + 1) % 100), 30);
     return () => clearInterval(iv);
@@ -65,19 +63,8 @@ export default function ProfilePage() {
           0%   { background-position: 0% 50%; }
           100% { background-position: 300% 50%; }
         }
-        @keyframes pp-blink {
-          0%,100% { opacity:1; } 50% { opacity:0; }
-        }
-        @keyframes pp-scan {
-          from { transform: translateY(0); }
-          to   { transform: translateY(100%); }
-        }
         @keyframes pp-corner {
           0%,100% { opacity:0.25; } 50% { opacity:0.9; }
-        }
-        @keyframes pp-bar {
-          from { width: 0; }
-          to   { width: var(--w); }
         }
 
         .pp-wrap {
@@ -93,7 +80,6 @@ export default function ProfilePage() {
           padding: 48px 24px 96px;
         }
 
-        /* back */
         .pp-back {
           display: inline-flex; align-items: center; gap: 6px;
           background: none; border: none; cursor: pointer; padding: 0;
@@ -104,7 +90,6 @@ export default function ProfilePage() {
         }
         .pp-back:hover { color: rgba(240,184,73,0.75); }
 
-        /* ── Hero card ── */
         .pp-hero {
           display: flex; align-items: flex-start; gap: 28px;
           padding: 28px 28px 24px;
@@ -126,11 +111,7 @@ export default function ProfilePage() {
           padding: 1px; pointer-events: none;
         }
 
-        /* avatar */
-        .pp-avatar-wrap {
-          position: relative; flex-shrink: 0;
-          width: 80px; height: 80px;
-        }
+        .pp-avatar-wrap { position: relative; flex-shrink: 0; width: 80px; height: 80px; }
         .pp-avatar {
           width: 80px; height: 80px; border-radius: 14px;
           background: linear-gradient(135deg, rgba(240,184,73,0.12), rgba(240,184,73,0.05));
@@ -142,8 +123,7 @@ export default function ProfilePage() {
         .pp-avatar-scan {
           position: absolute; left: 0; right: 0; height: 1.5px;
           background: linear-gradient(90deg, transparent, rgba(240,184,73,0.8) 40%, rgba(245,208,112,1) 50%, rgba(240,184,73,0.8) 60%, transparent);
-          pointer-events: none; z-index: 2;
-          transition: top 0.03s linear;
+          pointer-events: none; z-index: 2; transition: top 0.03s linear;
         }
         .pp-status-dot {
           position: absolute; bottom: -3px; right: -3px;
@@ -152,7 +132,6 @@ export default function ProfilePage() {
           box-shadow: 0 0 8px rgba(74,222,128,0.8);
           animation: pp-pulse 1.5s ease-in-out infinite;
         }
-        /* corner brackets on avatar */
         .pp-av-corner {
           position: absolute; width: 8px; height: 8px;
           border-color: rgba(240,184,73,0.7); border-style: solid;
@@ -163,7 +142,6 @@ export default function ProfilePage() {
         .pp-av-corner.bl { bottom: -1px; left: -1px;  border-width: 0 0 1.5px 1.5px; animation-delay: 1s; }
         .pp-av-corner.br { bottom: -1px; right: -1px; border-width: 0 1.5px 1.5px 0; animation-delay: 1.5s; }
 
-        /* hero info */
         .pp-hero-info { flex: 1; min-width: 0; }
         .pp-tag {
           display: inline-flex; align-items: center; gap: 5px;
@@ -171,7 +149,6 @@ export default function ProfilePage() {
           letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 8px;
         }
         .pp-tag-dot { width: 4px; height: 4px; border-radius: 50%; background: #f0b849; animation: pp-pulse 2s ease-in-out infinite; }
-
         .pp-name {
           font-size: 22px; font-weight: 600; color: #f0ead8;
           letter-spacing: -0.01em; margin: 0 0 4px;
@@ -183,7 +160,6 @@ export default function ProfilePage() {
           display: flex; align-items: center; gap: 6px;
         }
 
-        /* edit button */
         .pp-edit-btn {
           margin-left: auto; align-self: flex-start; flex-shrink: 0;
           padding: 8px 18px; border-radius: 7px;
@@ -195,19 +171,16 @@ export default function ProfilePage() {
         }
         .pp-edit-btn:hover { background: rgba(240,184,73,0.12); border-color: rgba(240,184,73,0.55); }
 
-        /* editable inputs */
         .pp-input {
           background: rgba(240,184,73,0.06);
           border: 1px solid rgba(240,184,73,0.3);
           border-radius: 6px; padding: 6px 10px;
           color: #f0ead8; font-family: 'DM Mono', monospace;
           font-size: inherit; letter-spacing: inherit; outline: none;
-          width: 100%;
-          transition: border-color 0.2s;
+          width: 100%; transition: border-color 0.2s;
         }
         .pp-input:focus { border-color: rgba(240,184,73,0.65); }
 
-        /* ── Tabs ── */
         .pp-tabs {
           display: flex; gap: 2px;
           border-bottom: 1px solid rgba(240,184,73,0.1);
@@ -224,7 +197,6 @@ export default function ProfilePage() {
         .pp-tab.active { color: #f0b849; border-bottom-color: #f0b849; }
         .pp-tab:hover:not(.active) { color: rgba(200,185,150,0.65); }
 
-        /* ── Stats grid ── */
         .pp-stats {
           display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
           margin-bottom: 28px;
@@ -243,14 +215,12 @@ export default function ProfilePage() {
         .pp-stat-label { font-size: 9.5px; color: rgba(200,185,150,0.4); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
         .pp-stat-delta { font-size: 9.5px; color: rgba(200,185,150,0.3); letter-spacing: 0.03em; }
 
-        /* ── Section label ── */
         .pp-section-label {
           font-size: 9.5px; color: rgba(240,184,73,0.4); letter-spacing: 0.14em; text-transform: uppercase;
           margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
         }
         .pp-section-label::after { content:''; flex:1; height:1px; background:rgba(240,184,73,0.08); }
 
-        /* ── Recent files ── */
         .pp-file-list { display: flex; flex-direction: column; gap: 8px; }
         .pp-file {
           display: flex; align-items: center; gap: 12px;
@@ -262,7 +232,6 @@ export default function ProfilePage() {
           cursor: default;
         }
         .pp-file:hover { border-color: rgba(240,184,73,0.2); background: rgba(240,184,73,0.04); }
-
         .pp-file-type {
           font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase;
           padding: 3px 8px; border-radius: 4px; font-weight: 500; flex-shrink: 0;
@@ -270,58 +239,11 @@ export default function ProfilePage() {
         .pp-file-name { flex: 1; font-size: 12px; color: #f0ead8; letter-spacing: 0.01em; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .pp-file-time { font-size: 10px; color: rgba(200,185,150,0.3); letter-spacing: 0.03em; flex-shrink: 0; }
         .pp-file-done { font-size: 9px; color: #4ade80; letter-spacing: 0.06em; flex-shrink: 0; }
-
-        /* ── Settings panel ── */
-        .pp-settings { display: flex; flex-direction: column; gap: 12px; }
-        .pp-setting-row {
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 14px 16px; border-radius: 10px;
-          border: 1px solid rgba(240,184,73,0.08);
-          background: rgba(255,255,255,0.015);
-          animation: pp-fadeUp 0.3s ease both;
-        }
-        .pp-setting-label { font-size: 12px; color: rgba(200,185,150,0.7); letter-spacing: 0.02em; }
-        .pp-setting-sub   { font-size: 10px; color: rgba(200,185,150,0.3); margin-top: 2px; letter-spacing: 0.03em; }
-
-        /* toggle */
-        .pp-toggle { position: relative; width: 38px; height: 20px; flex-shrink: 0; cursor: pointer; }
-        .pp-toggle input { opacity:0; width:0; height:0; position:absolute; }
-        .pp-toggle-track {
-          position: absolute; inset: 0; border-radius: 10px;
-          background: rgba(240,184,73,0.1); border: 1px solid rgba(240,184,73,0.2);
-          transition: background 0.25s, border-color 0.25s;
-        }
-        .pp-toggle input:checked + .pp-toggle-track {
-          background: rgba(240,184,73,0.25); border-color: rgba(240,184,73,0.5);
-        }
-        .pp-toggle-thumb {
-          position: absolute; top: 3px; left: 3px;
-          width: 14px; height: 14px; border-radius: 50%;
-          background: rgba(240,184,73,0.4);
-          transition: transform 0.25s, background 0.25s;
-          pointer-events: none;
-        }
-        .pp-toggle input:checked ~ .pp-toggle-thumb {
-          transform: translateX(18px); background: #f0b849;
-          box-shadow: 0 0 8px rgba(240,184,73,0.6);
-        }
-
-        /* sign out */
-        .pp-signout {
-          margin-top: 36px; width: 100%; padding: 12px;
-          border-radius: 8px; border: 1px solid rgba(255,80,80,0.2);
-          background: rgba(255,80,80,0.04);
-          color: rgba(255,100,100,0.6); font-family: 'DM Mono', monospace;
-          font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
-          cursor: pointer; transition: all 0.2s;
-        }
-        .pp-signout:hover { border-color: rgba(255,80,80,0.45); color: rgba(255,100,100,0.9); background: rgba(255,80,80,0.08); }
       `}</style>
 
       <div className="pp-wrap">
         <div className="pp-inner" style={{ opacity: mounted ? 1 : 0, transition: 'opacity 0.3s' }}>
 
-          {/* back */}
           <button className="pp-back" onClick={() => router.back()}>
             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 5l-7 7 7 7"/>
@@ -329,25 +251,20 @@ export default function ProfilePage() {
             back
           </button>
 
-          {/* ── Hero card ── */}
+          {/* Hero */}
           <div className="pp-hero" style={{ animation: mounted ? 'pp-fadeUp 0.4s ease both' : 'none' }}>
-            {/* avatar */}
             <div className="pp-avatar-wrap">
               <div className="pp-avatar">
                 {name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                 <div className="pp-avatar-scan" style={{ top: `${scanLine}%` }} />
               </div>
-              <span className="pp-av-corner tl" />
-              <span className="pp-av-corner tr" />
-              <span className="pp-av-corner bl" />
-              <span className="pp-av-corner br" />
+              <span className="pp-av-corner tl" /><span className="pp-av-corner tr" />
+              <span className="pp-av-corner bl" /><span className="pp-av-corner br" />
               <div className="pp-status-dot" />
             </div>
 
-            {/* info */}
             <div className="pp-hero-info">
               <div className="pp-tag"><span className="pp-tag-dot" />AGENT PROFILE</div>
-
               {editMode ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
                   <input className="pp-input" style={{ fontSize: 18, fontWeight: 600 }} value={name}  onChange={e => setName(e.target.value)} />
@@ -371,16 +288,12 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* edit / save */}
-            <button
-              className="pp-edit-btn"
-              onClick={() => setEditMode(e => !e)}
-            >
+            <button className="pp-edit-btn" onClick={() => setEditMode(e => !e)}>
               {editMode ? '✓ Save' : '✎ Edit'}
             </button>
           </div>
 
-          {/* ── Tabs ── */}
+          {/* Tabs */}
           <div className="pp-tabs" style={{ animation: mounted ? 'pp-fadeUp 0.4s ease 0.08s both' : 'none' }}>
             {TABS.map(t => (
               <button key={t} className={`pp-tab${activeTab === t ? ' active' : ''}`} onClick={() => setActiveTab(t)}>
@@ -389,10 +302,9 @@ export default function ProfilePage() {
             ))}
           </div>
 
-          {/* ── Overview ── */}
+          {/* Overview */}
           {activeTab === 'Overview' && (
             <div style={{ animation: 'pp-fadeUp 0.3s ease both' }}>
-              {/* stats */}
               <div className="pp-section-label">performance metrics</div>
               <div className="pp-stats">
                 {(STATS as any[]).map((s, i) => (
@@ -407,33 +319,20 @@ export default function ProfilePage() {
                       )}
                     </div>
                     <div className="pp-stat-delta">{s.delta}</div>
-                    {s.label === 'API Calls' && (
-                      <div style={{ marginTop: 8, height: 3, borderRadius: 2, background: 'rgba(240,184,73,0.1)', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: '84%', borderRadius: 2, background: 'linear-gradient(90deg,#e8a83599,#f0b849)' }} />
-                      </div>
-                    )}
-                    {s.label === 'Plan' && (
+                    {s.isSubscription && (
                       <button style={{ marginTop: 10, fontSize: 9, padding: '3px 10px', borderRadius: 4, background: 'rgba(240,184,73,0.08)', border: '1px solid rgba(240,184,73,0.25)', color: 'rgba(240,184,73,0.7)', fontFamily: "'DM Mono',monospace", letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>
-                        Upgrade →
+                        Manage →
                       </button>
                     )}
                   </div>
                 ))}
               </div>
 
-              {/* recent */}
               <div className="pp-section-label" style={{ marginTop: 28 }}>recent documents</div>
               <div className="pp-file-list">
                 {RECENT.map((f, i) => (
                   <div key={i} className="pp-file" style={{ animationDelay: `${i * 0.05}s` }}>
-                    <span
-                      className="pp-file-type"
-                      style={{
-                        background: `${TYPE_COLOR[f.type]}18`,
-                        color: TYPE_COLOR[f.type],
-                        border: `1px solid ${TYPE_COLOR[f.type]}30`,
-                      }}
-                    >
+                    <span className="pp-file-type" style={{ background: `${TYPE_COLOR[f.type]}18`, color: TYPE_COLOR[f.type], border: `1px solid ${TYPE_COLOR[f.type]}30` }}>
                       {f.type}
                     </span>
                     <span className="pp-file-name">{f.name}</span>
@@ -445,14 +344,13 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* ── Activity ── */}
+          {/* Activity */}
           {activeTab === 'Activity' && (
             <div style={{ animation: 'pp-fadeUp 0.3s ease both' }}>
               <div className="pp-section-label">agent usage this month</div>
               {[
-                { label: 'HR Agent',        pct: 58, color: '#f0b849', count: '742 docs' },
-                { label: 'Marketing Agent', pct: 32, color: '#a78bfa', count: '409 docs' },
-                { label: 'Legal Agent',     pct: 10, color: '#34d399', count: '133 docs' },
+                { label: 'HR Agent',        pct: 64, color: '#f0b849', count: '742 docs' },
+                { label: 'Marketing Agent', pct: 36, color: '#a78bfa', count: '409 docs' },
               ].map((a, i) => (
                 <div key={a.label} style={{ marginBottom: 18, animation: `pp-fadeUp 0.3s ease ${i * 0.07}s both` }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
@@ -460,13 +358,7 @@ export default function ProfilePage() {
                     <span style={{ fontSize: 10, color: 'rgba(200,185,150,0.35)', letterSpacing: '0.04em' }}>{a.count} · {a.pct}%</span>
                   </div>
                   <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%', borderRadius: 3,
-                      background: `linear-gradient(90deg, ${a.color}99, ${a.color})`,
-                      width: `${a.pct}%`,
-                      boxShadow: `0 0 10px ${a.color}55`,
-                      transition: 'width 1s cubic-bezier(0.4,0,0.2,1)',
-                    }} />
+                    <div style={{ height: '100%', borderRadius: 3, background: `linear-gradient(90deg, ${a.color}99, ${a.color})`, width: `${a.pct}%`, boxShadow: `0 0 10px ${a.color}55`, transition: 'width 1s cubic-bezier(0.4,0,0.2,1)' }} />
                   </div>
                 </div>
               ))}
@@ -475,14 +367,7 @@ export default function ProfilePage() {
               <div className="pp-file-list">
                 {RECENT.map((f, i) => (
                   <div key={i} className="pp-file" style={{ animationDelay: `${i * 0.05}s` }}>
-                    <span
-                      className="pp-file-type"
-                      style={{
-                        background: `${TYPE_COLOR[f.type]}18`,
-                        color: TYPE_COLOR[f.type],
-                        border: `1px solid ${TYPE_COLOR[f.type]}30`,
-                      }}
-                    >
+                    <span className="pp-file-type" style={{ background: `${TYPE_COLOR[f.type]}18`, color: TYPE_COLOR[f.type], border: `1px solid ${TYPE_COLOR[f.type]}30` }}>
                       {f.type}
                     </span>
                     <span className="pp-file-name">{f.name}</span>
@@ -491,57 +376,6 @@ export default function ProfilePage() {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* ── Settings ── */}
-          {activeTab === 'Settings' && (
-            <div style={{ animation: 'pp-fadeUp 0.3s ease both' }}>
-              <div className="pp-section-label">preferences</div>
-              <div className="pp-settings">
-                {[
-                  { label: 'Email notifications', sub: 'Get notified when documents finish processing' },
-                  { label: 'Auto-process uploads',  sub: 'Immediately process files after upload' },
-                  { label: 'Dark mode',              sub: 'Always on — because it should be' },
-                  { label: 'Two-factor auth',        sub: 'Require 2FA on every login' },
-                ].map((s, i) => {
-                  const [on, setOn] = useState(i !== 1);
-                  return (
-                    <div key={s.label} className="pp-setting-row" style={{ animationDelay: `${i * 0.06}s` }}>
-                      <div>
-                        <div className="pp-setting-label">{s.label}</div>
-                        <div className="pp-setting-sub">{s.sub}</div>
-                      </div>
-                      <label className="pp-toggle">
-                        <input type="checkbox" checked={on} onChange={() => setOn(v => !v)} />
-                        <div className="pp-toggle-track" />
-                        <div className="pp-toggle-thumb" />
-                      </label>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="pp-section-label" style={{ marginTop: 32 }}>account</div>
-              <div className="pp-settings">
-                {['Change password', 'Export my data', 'Connected integrations'].map((label, i) => (
-                  <div key={label} className="pp-setting-row" style={{ animationDelay: `${i * 0.06}s`, cursor: 'pointer' }}>
-                    <div className="pp-setting-label">{label}</div>
-                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" style={{ color: 'rgba(240,184,73,0.35)' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-                    </svg>
-                  </div>
-                ))}
-              </div>
-
-              <button className="pp-signout">
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-                  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/>
-                  </svg>
-                  Sign out
-                </span>
-              </button>
             </div>
           )}
 
