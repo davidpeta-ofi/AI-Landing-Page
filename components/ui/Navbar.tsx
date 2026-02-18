@@ -76,6 +76,7 @@ const Navbar = () => {
     setUser(newUser);
     saveUser(newUser);
     setLoginOpen(false);
+    router.push('/platform');
   };
 
   const handleLogout = () => {
