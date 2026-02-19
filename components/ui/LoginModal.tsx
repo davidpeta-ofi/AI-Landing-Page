@@ -194,23 +194,56 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
   const switchView = (v: View) => { setErrors({}); setPassword(''); setConfirmPassword(''); setView(v); };
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const errs: Record<string, string> = {};
-    if (!email) errs.email = 'Email required';
-    else if (!validateEmail(email)) errs.email = 'Invalid email address';
-    if (!password) errs.password = 'Password required';
-    if (Object.keys(errs).length) { setErrors(errs); triggerShake(); return; }
+  e.preventDefault();
 
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      const displayName = email.split('@')[0]
-        .replace(/[._-]/g, ' ')
-        .replace(/\w/g, (c: string) => c.toUpperCase());
-      onLoginSuccess?.(displayName, email);
-      onClose();
-    }, 1000);
-  };
+  const errs: Record<string, string> = {};
+  if (!email) errs.email = 'Email required';
+  else if (!validateEmail(email)) errs.email = 'Invalid email address';
+  if (!password) errs.password = 'Password required';
+
+  if (Object.keys(errs).length) {
+    setErrors(errs);
+    triggerShake();
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login/`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setErrors({ password: data?.error || 'Invalid credentials' });
+      triggerShake();
+      return;
+    }
+
+    // ✅ SAVE TOKENS
+    localStorage.setItem('access', data.access);
+    localStorage.setItem('refresh', data.refresh);
+
+    const displayName = `${data.first_name || ''} ${data.last_name || ''}`.trim() || email;
+
+    onLoginSuccess?.(displayName, email);
+    onClose();
+
+  } catch {
+    setErrors({ email: 'Network error — please try again.' });
+    triggerShake();
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleForgot = (e: React.FormEvent) => {
     e.preventDefault();
