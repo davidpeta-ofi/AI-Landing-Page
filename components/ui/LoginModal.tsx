@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-/* ─── Agentic canvas background ─────────────────────────────────── */
+
 function AgenticBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -50,7 +50,6 @@ function AgenticBackground() {
       t += 0.012;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // deep bg
       const bg = ctx.createRadialGradient(canvas.width*.5, canvas.height*.4, 0, canvas.width*.5, canvas.height*.4, canvas.width*.75);
       bg.addColorStop(0, 'rgba(14,12,32,1)');
       bg.addColorStop(0.5, 'rgba(8,7,20,1)');
@@ -58,14 +57,12 @@ function AgenticBackground() {
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // dot grid
       ctx.fillStyle = 'rgba(240,184,73,0.055)';
       for (let gx = 0; gx < canvas.width; gx += 48)
         for (let gy = 0; gy < canvas.height; gy += 48) {
           ctx.beginPath(); ctx.arc(gx, gy, 0.6, 0, Math.PI*2); ctx.fill();
         }
 
-      // scan lines
       scanLines.forEach(sl => {
         sl.y += sl.speed;
         if (sl.y > canvas.height) sl.y = 0;
@@ -77,7 +74,6 @@ function AgenticBackground() {
         ctx.fillRect(0, sl.y-1, canvas.width, 2);
       });
 
-      // radar 1
       radar.angle += 0.008;
       for (let i = 0; i < 30; i++) {
         const ta = radar.angle - i*0.07;
@@ -99,7 +95,6 @@ function AgenticBackground() {
       ctx.beginPath(); ctx.arc(blipX, blipY, 2.5, 0, Math.PI*2);
       ctx.fillStyle = `rgba(240,184,73,${Math.abs(Math.sin(t*3))*0.6+0.2})`; ctx.fill();
 
-      // radar 2
       ctx.beginPath(); ctx.arc(radar2.x, radar2.y, radar2.radius, 0, Math.PI*2);
       ctx.strokeStyle='rgba(240,184,73,0.08)'; ctx.lineWidth=0.8; ctx.stroke();
       const r2a = -radar.angle*0.6;
@@ -110,7 +105,6 @@ function AgenticBackground() {
         ctx.fillStyle = `rgba(240,184,73,${(1-i/20)*0.06})`; ctx.fill();
       }
 
-      // node network
       nodes.forEach(n => {
         n.x+=n.vx; n.y+=n.vy; n.pulse+=0.025;
         if(n.x<0) n.x=canvas.width; if(n.x>canvas.width) n.x=0;
@@ -129,7 +123,6 @@ function AgenticBackground() {
         ctx.fillStyle=`rgba(240,184,73,${Math.abs(Math.sin(n.pulse))*0.5+0.12})`; ctx.fill();
       });
 
-      // hex labels
       ctx.font = "9px 'DM Mono', monospace";
       hexLabels.forEach(h => {
         h.y+=h.vy;
@@ -152,7 +145,8 @@ function validateEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
-type View = 'login' | 'forgot' | 'register' | 'forgot-sent';
+// ── Added 'register-success' to the View type ──
+type View = 'login' | 'forgot' | 'register' | 'forgot-sent' | 'register-success';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -175,7 +169,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
   useEffect(() => {
     if (isOpen) {
-      // delay card entrance to sync after ripple peak (~420ms)
       setPhase('entering');
       setTimeout(() => setPhase('visible'), 50);
       document.body.style.overflow = 'hidden';
@@ -201,24 +194,57 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
   const switchView = (v: View) => { setErrors({}); setPassword(''); setConfirmPassword(''); setView(v); };
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const errs: Record<string, string> = {};
-    if (!email) errs.email = 'Email required';
-    else if (!validateEmail(email)) errs.email = 'Invalid email address';
-    if (!password) errs.password = 'Password required';
-    if (Object.keys(errs).length) { setErrors(errs); triggerShake(); return; }
+  e.preventDefault();
 
-    // ── TEMPORARY: fake login for UI testing (swap with real API when backend is ready) ──
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      const displayName = email.split('@')[0]
-        .replace(/[._-]/g, ' ')
-        .replace(/\w/g, (c: string) => c.toUpperCase());
-      onLoginSuccess?.(displayName, email);
-      onClose();
-    }, 1000);
+  const errs: Record<string, string> = {};
+  if (!email) errs.email = 'Email required';
+  else if (!validateEmail(email)) errs.email = 'Invalid email address';
+  if (!password) errs.password = 'Password required';
+
+  if (Object.keys(errs).length) {
+    setErrors(errs);
+    triggerShake();
+    return;
   }
+
+  setLoading(true);
+
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login/`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setErrors({ password: data?.error || 'Invalid credentials' });
+      triggerShake();
+      return;
+    }
+
+    // ✅ SAVE TOKENS
+    localStorage.setItem('access', data.access);
+    localStorage.setItem('refresh', data.refresh);
+
+    const displayName = `${data.first_name || ''} ${data.last_name || ''}`.trim() || email;
+
+    onLoginSuccess?.(displayName, email);
+    onClose();
+
+  } catch {
+    setErrors({ email: 'Network error — please try again.' });
+    triggerShake();
+  } finally {
+    setLoading(false);
+  }
+};
+
+
   const handleForgot = (e: React.FormEvent) => {
     e.preventDefault();
     const errs: Record<string, string> = {};
@@ -264,8 +290,8 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
         return;
       }
 
-      // success — prompt user to check email and go to login
-      switchView('forgot-sent'); // re-use the "check your inbox" confirmation screen
+      // ── Changed from 'forgot-sent' to 'register-success' ──
+      switchView('register-success');
 
     } catch {
       setErrors({ email: 'Network error — please try again.' });
@@ -291,7 +317,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
 
-        /* ── Overlay: iris wipe from gold to dark ── */
         @keyframes iris-in {
           0%   { clip-path: circle(0% at var(--ox) var(--oy)); }
           100% { clip-path: circle(150% at var(--ox) var(--oy)); }
@@ -301,7 +326,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
           100% { clip-path: circle(0% at var(--ox) var(--oy)); opacity:0; }
         }
 
-        /* ── Card: shatter in from small ── */
         @keyframes card-materialize {
           0%   { opacity:0; transform: scale(0.72) translateY(20px); filter: blur(12px) brightness(3); }
           35%  { filter: blur(2px) brightness(1.4); }
@@ -313,13 +337,11 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
           100% { opacity:0; transform: scale(0.88) translateY(12px); filter: blur(8px); }
         }
 
-        /* ── Scan line sweep ── */
         @keyframes scan-sweep {
           0%   { top: -2px; opacity: 0.6; }
           100% { top: 100%; opacity: 0; }
         }
 
-        /* ── Content stagger ── */
         @keyframes content-rise {
           from { opacity:0; transform: translateY(10px); }
           to   { opacity:1; transform: translateY(0); }
@@ -343,6 +365,14 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
         @keyframes gold-line {
           from { width: 0; }
           to   { width: 100%; }
+        }
+        @keyframes pulse-ring {
+          0%,100% { transform: scale(1); opacity: 0.5; }
+          50%      { transform: scale(1.06); opacity: 1; }
+        }
+        @keyframes icon-pop {
+          from { transform: scale(0.5); opacity: 0; }
+          to   { transform: scale(1); opacity: 1; }
         }
 
         .lm-overlay-iris {
@@ -463,35 +493,35 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
         }
       `}</style>
 
-      {/* ── full-screen agentic background — fixed, sits behind overlay, NOT clipped ── */}
+      {/* Background */}
       <div style={{ position:'fixed', inset:0, zIndex:999, pointerEvents:'none' }}>
         <AgenticBackground />
       </div>
 
-      {/* ── iris overlay — transparent, only clips the card in ── */}
+      {/* Overlay */}
       <div
         className={`lm-overlay-iris ${phase}`}
         onClick={phase === 'visible' ? onClose : undefined}
         style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
       >
-        {/* ── card ── */}
+        {/* Card */}
         <div
           className={`lm-card ${phase}${shake ? ' shaking' : ''}`}
           onClick={e => e.stopPropagation()}
         >
-          {/* scan line on enter */}
+          {/* Scan sweep */}
           {(phase === 'entering' || phase === 'visible') && <div className="lm-scan" />}
 
-          {/* grid texture */}
+          {/* Grid overlay */}
           <div style={{ position:'absolute', inset:0, pointerEvents:'none', opacity:0.022,
             backgroundImage:'linear-gradient(rgba(240,184,73,1) 1px,transparent 1px),linear-gradient(90deg,rgba(240,184,73,1) 1px,transparent 1px)',
             backgroundSize:'24px 24px' }} />
 
-          {/* orbit rings */}
+          {/* Orbit rings */}
           <div style={{ position:'absolute', width:260, height:260, border:'1px solid rgba(240,184,73,0.07)', borderRadius:'50%', top:'50%', left:'50%', animation:'orbitA 30s linear infinite', pointerEvents:'none' }} />
           <div style={{ position:'absolute', width:180, height:180, border:'1px solid rgba(240,184,73,0.05)', borderRadius:'50%', top:'50%', left:'50%', animation:'orbitB 22s linear infinite', pointerEvents:'none' }} />
 
-          {/* corner ticks */}
+          {/* Corner brackets */}
           {[{t:0,l:0,bt:true,bl:true},{t:0,r:0,bt:true,br:true},{b:0,l:0,bb:true,bl:true},{b:0,r:0,bb:true,br:true}].map((c,i)=>(
             <div key={i} style={{
               position:'absolute', width:10, height:10,
@@ -508,7 +538,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             }} />
           ))}
 
-          {/* close */}
+          {/* Close button */}
           <button onClick={onClose} style={{
             position:'absolute', top:10, right:10, width:24, height:24,
             borderRadius:6, background:'rgba(240,184,73,0.06)', border:'1px solid rgba(240,184,73,0.15)',
@@ -520,22 +550,28 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='rgba(240,184,73,0.06)';(e.currentTarget as HTMLElement).style.color='rgba(240,184,73,0.4)';}}
           >✕</button>
 
-          {/* ── content ── */}
+          {/* Content */}
           <div style={{ position:'relative', zIndex:1 }}>
 
-            {/* logo + route */}
+            {/* Header */}
             <div className="lm-content-item" style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, animationDelay:'0.18s' }}>
               <img src="/sia-globe-v2.png" alt="SIA" style={{ height:26, width:'auto', mixBlendMode:'lighten' }} />
               <div style={{ width:1, height:14, background:'rgba(240,184,73,0.2)' }} />
               <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, color:'rgba(240,184,73,0.4)', letterSpacing:'0.18em', textTransform:'uppercase' }}>
-                {view==='login'?'auth/sign-in':view==='forgot'||view==='forgot-sent'?'auth/reset':'auth/register'}
+                {view === 'login'
+                  ? 'auth/sign-in'
+                  : view === 'forgot' || view === 'forgot-sent'
+                  ? 'auth/reset'
+                  : view === 'register-success'
+                  ? 'auth/registered'
+                  : 'auth/register'}
               </span>
               <span className="lm-cursor" />
             </div>
 
             <span className="lm-gold-underline" />
 
-            {/* ══ LOGIN ══ */}
+            {/* ── LOGIN VIEW ── */}
             {view === 'login' && (
               <div className="lm-view">
                 <h2 className="lm-content-item" style={{ fontFamily:"'DM Mono',monospace", fontSize:20, fontWeight:700, color:'#f0ead8', margin:'0 0 2px', letterSpacing:'-0.01em', animationDelay:'0.22s' }}>
@@ -586,7 +622,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
               </div>
             )}
 
-            {/* ══ FORGOT ══ */}
+            {/* ── FORGOT PASSWORD VIEW ── */}
             {view === 'forgot' && (
               <div className="lm-view">
                 <button className="lm-back" onClick={()=>switchView('login')}>
@@ -607,7 +643,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
               </div>
             )}
 
-            {/* ══ FORGOT SENT ══ */}
+            {/* ── FORGOT SENT VIEW ── */}
             {view === 'forgot-sent' && (
               <div className="lm-view" style={{ textAlign:'center', padding:'8px 0' }}>
                 <div style={{ width:44,height:44,borderRadius:10,background:'rgba(240,184,73,0.08)',border:'1px solid rgba(240,184,73,0.25)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px' }}>
@@ -621,7 +657,90 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
               </div>
             )}
 
-            {/* ══ REGISTER ══ */}
+            {/* ── REGISTER SUCCESS VIEW ── */}
+            {view === 'register-success' && (
+              <div className="lm-view" style={{ textAlign: 'center', padding: '8px 0' }}>
+
+                {/* Shield icon with pulse ring */}
+                <div style={{
+                  width: 52, height: 52, borderRadius: 12,
+                  background: 'rgba(240,184,73,0.1)',
+                  border: '1px solid rgba(240,184,73,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 16px', position: 'relative',
+                  boxShadow: '0 0 24px rgba(240,184,73,0.12)',
+                  animation: 'icon-pop 0.55s cubic-bezier(0.34,1.56,0.64,1) both',
+                }}>
+                  {/* Pulse ring */}
+                  <div style={{
+                    position: 'absolute', inset: -8, borderRadius: 18,
+                    border: '1px solid rgba(240,184,73,0.2)',
+                    animation: 'pulse-ring 2s ease-in-out infinite',
+                    pointerEvents: 'none',
+                  }} />
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#f0b849" strokeWidth="1.8">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5C16.5 22.15 20 17.25 20 12V6l-8-4z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" />
+                  </svg>
+                </div>
+
+                <h2 style={{ fontFamily:"'DM Mono',monospace", fontSize:18, fontWeight:700, color:'#f0ead8', margin:'0 0 6px', letterSpacing:'-0.01em' }}>
+                  Account generated.
+                </h2>
+                <p style={{ fontFamily:"'DM Mono',monospace", fontSize:11.5, color:'rgba(200,185,150,0.38)', margin:'0 0 4px', lineHeight:1.6, letterSpacing:'0.02em' }}>
+                  Identity registered in the system.
+                </p>
+                <p style={{ fontFamily:"'DM Mono',monospace", fontSize:11, color:'rgba(240,184,73,0.65)', margin:'0 0 20px' }}>
+                  {email}
+                </p>
+
+                {/* Status checklist */}
+                <div style={{ marginBottom: 20, textAlign: 'left' }}>
+                  {[
+                    { done: true,  label: 'Identity verified',              active: false },
+                    { done: true,  label: 'Credentials encrypted & stored', active: false },
+                    { done: false, label: 'Awaiting email confirmation',    active: true  },
+                  ].map((step, i) => (
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '6px 0',
+                      borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                      fontFamily: "'DM Mono',monospace", fontSize: 10.5,
+                      letterSpacing: '0.05em',
+                      color: step.active ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.38)',
+                    }}>
+                      <div style={{
+                        width: 16, height: 16, borderRadius: 3, flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: step.done ? 'rgba(240,184,73,0.15)' : 'transparent',
+                        border: step.done ? 'none' : `1px solid ${step.active ? 'rgba(240,184,73,0.5)' : 'rgba(255,255,255,0.15)'}`,
+                      }}>
+                        {step.done
+                          ? (
+                            <svg width="10" height="10" fill="none" stroke="#f0b849" strokeWidth="2.2">
+                              <path d="M2 5l2.5 2.5L8 3"/>
+                            </svg>
+                          ) : (
+                            <div style={{
+                              width: 5, height: 5, borderRadius: '50%',
+                              background: 'rgba(240,184,73,0.5)',
+                              animation: 'blink 1s step-end infinite',
+                            }} />
+                          )
+                        }
+                      </div>
+                      {step.label}
+                    </div>
+                  ))}
+                </div>
+
+                <button type="button" className="lm-btn" onClick={() => switchView('login')}>
+                  → proceed_to_login()
+                </button>
+              </div>
+            )}
+
+            {/* ── REGISTER VIEW ── */}
             {view === 'register' && (
               <div className="lm-view">
                 <button className="lm-back" onClick={()=>switchView('login')}>
@@ -630,7 +749,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                 <h2 style={{ fontFamily:"'DM Mono',monospace", fontSize:19, fontWeight:700, color:'#f0ead8', margin:'0 0 2px', letterSpacing:'-0.01em' }}>Create account.</h2>
                 <p style={{ fontFamily:"'DM Mono',monospace", fontSize:11.5, color:'rgba(200,185,150,0.38)', margin:'0 0 16px', letterSpacing:'0.02em' }}>Takes less than a minute.</p>
                 <form onSubmit={handleRegister} noValidate>
-                  {/* First + Last name row */}
+                  {/* Name row */}
                   <div style={{ display:'flex', gap:8, marginBottom:10 }}>
                     <div style={{ flex:1 }}>
                       <label className="lm-label">First Name</label>
@@ -649,6 +768,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                     <input type="email" className={`lm-input${errors.email?' lm-input-err':''}`} placeholder="you@example.com" value={email} onChange={e=>{setEmail(e.target.value);setErrors(p=>({...p,email:''}));}} />
                     {errors.email && <ErrMsg msg={errors.email} />}
                   </div>
+                  {/* Password */}
                   <div style={{ marginBottom:10 }}>
                     <label className="lm-label">Password</label>
                     <div style={{ position:'relative' }}>
@@ -661,6 +781,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                     </div>
                     {errors.password && <ErrMsg msg={errors.password} />}
                   </div>
+                  {/* Confirm Password */}
                   <div style={{ marginBottom:18 }}>
                     <label className="lm-label">Confirm Password</label>
                     <input type={showPass?'text':'password'} className={`lm-input${errors.confirm?' lm-input-err':''}`} placeholder="••••••••" value={confirmPassword} onChange={e=>{setConfirmPassword(e.target.value);setErrors(p=>({...p,confirm:''}));}} />
