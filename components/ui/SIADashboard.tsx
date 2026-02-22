@@ -2,19 +2,24 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  BarChart3, Bot, Settings, Bell, Search, Activity,
-  TrendingUp, Users, Zap, Clock, CheckCircle,
+  Bot, Settings, Bell, Search, Activity,
+  Users, Zap,
   ChevronRight, Home, MessageSquare,
-  Image, FileText, Target, Upload, X, CloudUpload,
+  FileText, Target, Upload, X, CloudUpload,
   FolderOpen, Check, Sparkles, Brain, Cpu, ArrowRight,
   Shield, Star, Briefcase, ChevronDown, AlertCircle,
-  Loader, CircleCheck, ScanSearch, Wand2, LayoutDashboard,
-  Mail, Edit, ArrowLeft, ExternalLink,
+  Loader, CircleCheck, ScanSearch, Wand2,
+  Mail, CreditCard,
 } from "lucide-react";
-import { AreaChart, Area, XAxis, ResponsiveContainer } from "recharts";
+// recharts removed — no longer showing fake chart data
+import { useRouter } from "next/navigation";
 
 // ✅ Import SettingsPage from its own file
 import SettingsPage from "@/app/settings/page";
+import {
+  fetchProfile, fetchAgentStatus, isAuthenticated,
+  type UserProfile, type AgentStatus,
+} from "@/lib/api";
 
 // ======================== DESIGN TOKENS ========================
 const C = {
@@ -42,42 +47,9 @@ const C = {
   textMut: 'rgba(255,255,255,0.55)',
 };
 
-const AGENTS_DATA = [
-  { id: 'mark', name: 'MARK', role: 'Marketing Automation', status: 'Active', sColor: C.green, progress: 78, color: C.gold, dim: C.goldDim, Icon: Image, task: 'Generating carousel: slide 4/6 — adding CTA overlay' },
-  { id: 'aria', name: 'ARIA', role: 'Content Writer', status: 'Writing', sColor: C.purple, progress: 92, color: C.purple, dim: C.purpleDim, Icon: FileText, task: 'Drafting blog: "AI Agents in Operations" — 2,400 words' },
-  { id: 'scout', name: 'SCOUT', role: 'Sales Intelligence', status: 'Scanning', sColor: C.blue, progress: 34, color: C.blue, dim: C.blueDim, Icon: Target, task: 'Analyzing 847 visitor sessions for intent signals...' },
-  { id: 'pulse', name: 'PULSE', role: 'Analytics Engine', status: 'Active', sColor: C.green, progress: 67, color: C.cyan, dim: C.cyanDim, Icon: BarChart3, task: 'Compiling weekly KPI report — 4 data sources' },
-  { id: 'nexus', name: 'NEXUS', role: 'HR Operations', status: 'Idle', sColor: C.textMut, progress: 100, color: C.pink, dim: C.pinkDim, Icon: Users, task: 'Standby — all screening tasks completed' },
-];
-
 const AGENT_OPTIONS = [
-  { id: 'hr', label: 'HR Agent', sub: 'Recruitment & people ops', color: C.pink, dim: C.pinkDim, Icon: Users },
-  { id: 'marketing', label: 'Marketing Agent', sub: 'Campaigns & content', color: C.gold, dim: C.goldDim, Icon: Target },
-];
-
-const FEED = [
-  { agent: 'MARK', color: C.gold, text: 'Generated 6 carousel slides for Q1 campaign', time: '2m ago' },
-  { agent: 'ARIA', color: C.purple, text: 'Drafted LinkedIn article — pending review', time: '5m ago' },
-  { agent: 'SCOUT', color: C.blue, text: 'Identified 3 high-intent leads from traffic', time: '8m ago' },
-  { agent: 'PULSE', color: C.cyan, text: 'Weekly engagement report ready for download', time: '12m ago' },
-  { agent: 'MARK', color: C.gold, text: 'Video pipeline: Scene 2/4 rendering complete', time: '15m ago' },
-  { agent: 'NEXUS', color: C.pink, text: 'Screened 12 applicants for Senior Design role', time: '23m ago' },
-  { agent: 'ARIA', color: C.purple, text: 'A/B test copy variants for email campaign ready', time: '31m ago' },
-  { agent: 'SCOUT', color: C.blue, text: 'Sales pipeline updated — 4 deals moved to closing', time: '38m ago' },
-];
-
-const STATS = [
-  { label: 'Tasks Completed', val: 247, suf: '', Icon: CheckCircle, color: C.green, tag: '+12%' },
-  { label: 'Active Agents', val: 5, suf: '/6', Icon: Bot, color: C.purple, tag: 'Online' },
-  { label: 'Hours Saved', val: 20, suf: 'h', Icon: Clock, color: C.gold, tag: 'This week' },
-  { label: 'Accuracy Rate', val: 94.2, suf: '%', Icon: TrendingUp, color: C.cyan, tag: '+2.1%' },
-];
-
-const CHART = [
-  { d: 'Mon', tasks: 28, eff: 89 }, { d: 'Tue', tasks: 35, eff: 91 },
-  { d: 'Wed', tasks: 42, eff: 93 }, { d: 'Thu', tasks: 38, eff: 90 },
-  { d: 'Fri', tasks: 51, eff: 94 }, { d: 'Sat', tasks: 22, eff: 96 },
-  { d: 'Sun', tasks: 31, eff: 94 },
+  { id: 'hr',        label: 'HR Agent',         sub: 'Recruitment & people ops',  color: C.pink, dim: C.pinkDim, Icon: Users,  href: '/hr-agent'    },
+  { id: 'marketing', label: 'MARK Agent',        sub: 'Marketing & campaigns',     color: C.gold, dim: C.goldDim, Icon: Target, href: '/agents/mark' },
 ];
 
 const NAV = [
@@ -518,36 +490,49 @@ function UploadDropdown({ onSelectAgent, onClose }: { onSelectAgent: (id: string
 }
 
 // ======================== AGENT SELECTOR PANEL ========================
-function AgentSelectorPanel({ selectedId, onSelect }: { selectedId: string | null; onSelect: (id: string) => void }) {
+function AgentSelectorPanel({
+  selectedId, onSelect, canMark, canHR,
+}: {
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  canMark?: boolean;
+  canHR?: boolean;
+}) {
   return (
     <div style={{ borderRadius:10, background:C.bgCard, border:`1px solid ${C.border}`, overflow:'hidden', animation:'agentPanelIn 0.22s cubic-bezier(0.16,1,0.3,1)' }}>
       <div style={{ padding:'9px 12px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div style={{ fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:6 }}>
-          <Bot size={12} color={C.purple} /> Switch Agent
+          <Bot size={12} color={C.purple} /> Your Agents
         </div>
-        <span style={{ fontSize:8, color:C.textMut, letterSpacing:'0.1em', textTransform:'uppercase' }}>select to activate</span>
+        <span style={{ fontSize:8, color:C.textMut, letterSpacing:'0.1em', textTransform:'uppercase' }}>click to open</span>
       </div>
       <div style={{ padding:'6px 8px', display:'flex', flexDirection:'column', gap:4 }}>
         {AGENT_OPTIONS.map(ag => {
+          const hasAccess = ag.id === 'marketing' ? canMark : canHR;
           const isSelected = selectedId === ag.id;
           return (
-            <button key={ag.id} onClick={() => onSelect(ag.id)}
-              style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 10px', borderRadius:8, background: isSelected ? ag.dim : 'transparent', border:`1px solid ${isSelected ? ag.color+'55' : 'transparent'}`, cursor:'pointer', textAlign:'left', width:'100%', transition:'all 0.18s' }}
-              onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = C.bgCardHover; }}
-              onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
-              <div style={{ width:32, height:32, borderRadius:9, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:ag.dim, border:`1px solid ${ag.color}33` }}>
-                <ag.Icon size={14} color={ag.color} />
-              </div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:11, fontWeight:700, color: isSelected ? ag.color : C.text }}>{ag.label}</div>
-                <div style={{ fontSize:9, color:C.textMut, marginTop:1 }}>{ag.sub}</div>
-              </div>
-              {isSelected && (
-                <div style={{ width:18, height:18, borderRadius:9, background:ag.color, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                  <Check size={10} color="#fff" strokeWidth={3} />
+            <div key={ag.id} style={{ position:'relative' }}>
+              <button
+                onClick={() => hasAccess ? (window.location.href = ag.href) : onSelect(ag.id)}
+                style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 10px', borderRadius:8, background: isSelected ? ag.dim : 'transparent', border:`1px solid ${isSelected ? ag.color+'55' : 'transparent'}`, cursor:'pointer', textAlign:'left', width:'100%', transition:'all 0.18s', opacity: hasAccess ? 1 : 0.5 }}
+                onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = C.bgCardHover; }}
+                onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
+                <div style={{ width:32, height:32, borderRadius:9, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:ag.dim, border:`1px solid ${ag.color}33` }}>
+                  <ag.Icon size={14} color={ag.color} />
                 </div>
-              )}
-            </button>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color: isSelected ? ag.color : C.text }}>{ag.label}</div>
+                  <div style={{ fontSize:9, color:C.textMut, marginTop:1 }}>
+                    {hasAccess ? ag.sub : 'No subscription — contact admin'}
+                  </div>
+                </div>
+                {hasAccess ? (
+                  <ArrowRight size={12} color={ag.color} />
+                ) : (
+                  <div style={{ fontSize:8, color:C.textMut }}>🔒</div>
+                )}
+              </button>
+            </div>
           );
         })}
       </div>
@@ -557,8 +542,7 @@ function AgentSelectorPanel({ selectedId, onSelect }: { selectedId: string | nul
 
 // ======================== MAIN COMPONENT ========================
 export default function SIADashboard() {
-  const [visFeed, setVisFeed] = useState(4);
-  const [hovered, setHovered] = useState<string | null>(null);
+  const router = useRouter();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [uploadDropdownOpen, setUploadDropdownOpen] = useState(false);
   const [sidebarDropdownOpen, setSidebarDropdownOpen] = useState(false);
@@ -568,12 +552,20 @@ export default function SIADashboard() {
   const uploadBtnRef = useRef<HTMLDivElement>(null);
   const sidebarAgentBtnRef = useRef<HTMLDivElement>(null);
 
+  // Real user data from backend
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
+
   useEffect(() => {
-    if (visFeed < FEED.length) {
-      const t = setTimeout(() => setVisFeed(v => v + 1), 1800);
-      return () => clearTimeout(t);
-    }
-  }, [visFeed]);
+    if (!isAuthenticated()) return;
+    Promise.all([
+      fetchProfile().catch(() => null),
+      fetchAgentStatus().catch(() => null),
+    ]).then(([p, a]) => {
+      if (p) setUserProfile(p);
+      if (a) setAgentStatus(a);
+    });
+  }, []);
 
   useEffect(() => {
     if (!uploadDropdownOpen) return;
@@ -592,13 +584,6 @@ export default function SIADashboard() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [sidebarDropdownOpen]);
-
-  const counters = [
-    useCounter(247, 2500),
-    useCounter(5, 1000),
-    useCounter(20, 2000),
-    useCounter(94.2, 2500, 1),
-  ];
 
   const font = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
 
@@ -707,8 +692,15 @@ export default function SIADashboard() {
             return navItem;
           })}
         </div>
-        {/* Avatar */}
-        <div style={{ width:30, height:30, borderRadius:15, background:'linear-gradient(135deg, #1a1a2e, #16213e)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:800, cursor:'pointer', color:C.text, border:'2px solid rgba(255,255,255,0.12)', boxShadow:'0 2px 8px rgba(0,0,0,0.4)', letterSpacing:'-0.3px' }}>N</div>
+        {/* Avatar — shows real user initials */}
+        <div
+          onClick={() => router.push('/profile')}
+          title={userProfile?.full_name ?? 'Profile'}
+          style={{ width:30, height:30, borderRadius:15, background:'linear-gradient(135deg,rgba(240,184,73,0.2),rgba(240,184,73,0.1))', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, cursor:'pointer', color:C.gold, border:'1.5px solid rgba(240,184,73,0.35)', boxShadow:'0 2px 8px rgba(0,0,0,0.4)', letterSpacing:'-0.3px' }}>
+          {userProfile
+            ? (userProfile.full_name || '?').split(' ').filter(Boolean).map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
+            : '·'}
+        </div>
       </div>
 
       {/* MAIN */}
@@ -745,136 +737,206 @@ export default function SIADashboard() {
           {/* ===== DASHBOARD ===== */}
           {activeNav !== 'Settings' && (
             <>
-              {/* STATS ROW */}
+              {/* WELCOME BANNER */}
+              <div style={{ padding:'12px 16px', borderRadius:12, background:'linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(245,166,35,0.06) 100%)', border:`1px solid ${C.border}`, marginBottom:12, animation:'dashFadeIn 0.4s ease both' }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:8 }}>
+                  <div>
+                    <div style={{ fontSize:15, fontWeight:800, letterSpacing:'-0.2px', marginBottom:2 }}>
+                      {userProfile?.full_name ? `Welcome back, ${userProfile.full_name.split(' ')[0]}.` : 'Welcome to SIA.'}
+                    </div>
+                    <div style={{ fontSize:10, color:C.textMut }}>
+                      {userProfile?.tenant
+                        ? <>{userProfile.tenant.name} · <span style={{ color: userProfile.tenant.subscription_status === 'active' || userProfile.tenant.subscription_status === 'trial' ? C.green : '#f87171', fontWeight:700 }}>{userProfile.tenant.subscription_status.toUpperCase()}</span></>
+                        : 'No organisation assigned — contact your administrator'}
+                    </div>
+                  </div>
+                  <div style={{ display:'flex', gap:6 }}>
+                    {[
+                      { label:'MARK Agent', color:C.gold,  ok: agentStatus?.can_access_mark ?? userProfile?.can_access_mark ?? false },
+                      { label:'HR Agent',   color:C.pink,  ok: agentStatus?.can_access_hr   ?? userProfile?.can_access_hr   ?? false },
+                    ].map(a => (
+                      <div key={a.label} style={{ display:'flex', alignItems:'center', gap:5, padding:'4px 10px', borderRadius:20, background: a.ok ? `${a.color}15` : 'rgba(255,255,255,0.04)', border:`1px solid ${a.ok ? a.color+'44' : 'rgba(255,255,255,0.08)'}`, fontSize:9, color: a.ok ? a.color : C.textMut, fontWeight:700, letterSpacing:'0.04em' }}>
+                        <div style={{ width:5, height:5, borderRadius:3, background: a.ok ? a.color : C.textMut, boxShadow: a.ok ? `0 0 5px ${a.color}` : 'none', animation: a.ok ? 'dashPulse 2s infinite' : 'none' }} />
+                        {a.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* REAL STAT CARDS */}
               <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:10, marginBottom:14 }}>
-                {STATS.map((s, i) => (
-                  <div key={i} style={{ padding:'10px 12px', borderRadius:10, background:C.bgCard, border:`1px solid ${C.border}`, animation:`dashFadeIn 0.5s ease ${i*0.1}s both` }}>
+                {[
+                  { label:'Agents Accessible', val: [agentStatus?.can_access_mark ?? userProfile?.can_access_mark, agentStatus?.can_access_hr ?? userProfile?.can_access_hr].filter(Boolean).length, suf:'/2', color:C.purple, Icon:Bot, tag:'Now' },
+                  { label:'Subscription', val: userProfile?.tenant?.subscription_type?.toUpperCase() ?? 'NONE', suf:'', color:C.gold, Icon:Star, tag:'' },
+                  { label:'Status', val: userProfile?.tenant?.subscription_status?.toUpperCase() ?? 'N/A', suf:'', color: userProfile?.tenant?.subscription_status === 'active' ? C.green : userProfile?.tenant?.subscription_status === 'trial' ? C.gold : C.textMut, Icon:Shield, tag:'' },
+                  { label:'Company', val: userProfile?.tenant?.name ?? '—', suf:'', color:C.cyan, Icon:Briefcase, tag:'' },
+                ].map((s, i) => (
+                  <div key={i} style={{ padding:'10px 12px', borderRadius:10, background:C.bgCard, border:`1px solid ${C.border}`, animation:`dashFadeIn 0.5s ease ${i*0.08}s both` }}>
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
                       <div style={{ width:24, height:24, borderRadius:7, background:s.color+'15', display:'flex', alignItems:'center', justifyContent:'center' }}>
                         <s.Icon size={12} color={s.color} />
                       </div>
-                      <span style={{ fontSize:8, color:s.color, fontWeight:700, background:s.color+'25', padding:'2px 6px', borderRadius:5 }}>{s.tag}</span>
+                      {s.tag && <span style={{ fontSize:8, color:s.color, fontWeight:700, background:s.color+'20', padding:'2px 6px', borderRadius:5 }}>{s.tag}</span>}
                     </div>
-                    <div style={{ fontSize:20, fontWeight:800, lineHeight:1, letterSpacing:'-0.5px' }}>{counters[i]}{s.suf}</div>
+                    <div style={{ fontSize:typeof s.val === 'string' && s.val.length > 6 ? 12 : 20, fontWeight:800, lineHeight:1, letterSpacing:'-0.5px', color:s.color, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.val}{s.suf}</div>
                     <div style={{ fontSize:9, color:C.textMut, marginTop:3 }}>{s.label}</div>
                   </div>
                 ))}
               </div>
 
-              {/* AGENT SELECTOR + Active Agents + Feed */}
-              <div style={{ display:'grid', gridTemplateColumns:'1.1fr 0.9fr', gap:10, marginBottom:14 }}>
+              {/* AGENT CARDS + RIGHT PANEL */}
+              <div style={{ display:'grid', gridTemplateColumns:'1.1fr 0.9fr', gap:10, marginBottom:12 }}>
+
+                {/* LEFT: Agent Selector + Agent Detail Cards */}
                 <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                  <AgentSelectorPanel selectedId={selectedAgent} onSelect={setSelectedAgent} />
-                  <div style={{ borderRadius:10, background:C.bgCard, border:`1px solid ${C.border}`, overflow:'hidden', flex:1 }}>
-                    <div style={{ padding:'9px 12px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                      <div style={{ fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:6 }}>
-                        <Activity size={12} color={C.purple} /> Active Agents
-                      </div>
-                      <div style={{ fontSize:9, color:C.purpleLight, cursor:'pointer', display:'flex', alignItems:'center', gap:3, fontWeight:700 }}>
-                        View all <ChevronRight size={9} />
-                      </div>
-                    </div>
-                    <div style={{ padding:'4px 6px' }}>
-                      {AGENTS_DATA.map((a, i) => (
-                        <div key={a.id} onMouseEnter={() => setHovered(a.id)} onMouseLeave={() => setHovered(null)}
-                          style={{ padding:'7px 8px', borderRadius:8, marginBottom:2, cursor:'pointer', background: hovered===a.id ? C.bgCardHover : 'transparent', border:`1px solid ${hovered===a.id ? C.borderHover : 'transparent'}`, transition:'all 0.2s', animation:`dashFadeIn 0.4s ease ${i*0.08}s both` }}>
-                          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
-                            <div style={{ display:'flex', alignItems:'center', gap:7 }}>
-                              <div style={{ width:22, height:22, borderRadius:6, background:a.dim, display:'flex', alignItems:'center', justifyContent:'center', transition:'transform 0.2s', transform: hovered===a.id ? 'scale(1.08)' : 'scale(1)' }}>
-                                <a.Icon size={11} color={a.color} />
-                              </div>
-                              <div>
-                                <div style={{ fontSize:10, fontWeight:700, letterSpacing:'0.3px' }}>{a.name}</div>
-                                <div style={{ fontSize:8, color:C.textMut }}>{a.role}</div>
-                              </div>
-                            </div>
-                            <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-                              <div style={{ width:5, height:5, borderRadius:3, background:a.sColor, animation: a.status!=='Idle' ? 'dashPulse 2s ease-in-out infinite' : 'none', boxShadow: a.status!=='Idle' ? `0 0 6px ${a.sColor}50` : 'none' }} />
-                              <span style={{ fontSize:8, color:a.sColor, fontWeight:700, filter:'brightness(1.3)' }}>{a.status}</span>
-                            </div>
+                  <AgentSelectorPanel
+                    selectedId={selectedAgent}
+                    onSelect={setSelectedAgent}
+                    canMark={agentStatus?.can_access_mark ?? userProfile?.can_access_mark ?? false}
+                    canHR={agentStatus?.can_access_hr ?? userProfile?.can_access_hr ?? false}
+                  />
+
+                  {/* Agent Detail Cards */}
+                  {[
+                    {
+                      id: 'marketing',
+                      name: 'MARK Agent',
+                      role: 'Marketing Intelligence',
+                      desc: 'AI-powered marketing automation — campaigns, content strategy, lead generation, and performance analytics powered by n8n.',
+                      color: C.gold, dim: C.goldDim, Icon: Target,
+                      href: '/agents/mark',
+                      has: agentStatus?.can_access_mark ?? userProfile?.can_access_mark ?? false,
+                      infra: 'n8n · Cloud',
+                    },
+                    {
+                      id: 'hr',
+                      name: 'HR Agent',
+                      role: 'HR Operations',
+                      desc: 'Intelligent HR automation — resume screening, candidate ranking, onboarding workflows, and people analytics deployed on AWS.',
+                      color: C.pink, dim: C.pinkDim, Icon: Users,
+                      href: '/hr-agent',
+                      has: agentStatus?.can_access_hr ?? userProfile?.can_access_hr ?? false,
+                      infra: 'AWS · Enterprise',
+                    },
+                  ].map((ag, i) => (
+                    <div key={ag.id} style={{ padding:'12px 14px', borderRadius:10, background:C.bgCard, border:`1px solid ${ag.has ? ag.color+'30' : C.border}`, animation:`dashFadeIn 0.5s ease ${0.2 + i*0.1}s both` }}>
+                      <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
+                        <div style={{ width:36, height:36, borderRadius:10, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:ag.dim, border:`1px solid ${ag.color}33` }}>
+                          <ag.Icon size={16} color={ag.color} />
+                        </div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
+                            <span style={{ fontSize:12, fontWeight:800 }}>{ag.name}</span>
+                            <span style={{ fontSize:8, padding:'1px 6px', borderRadius:4, background: ag.has ? `${ag.color}20` : 'rgba(255,255,255,0.06)', color: ag.has ? ag.color : C.textMut, fontWeight:700, letterSpacing:'0.05em' }}>
+                              {ag.has ? 'ACTIVE' : 'NO ACCESS'}
+                            </span>
                           </div>
-                          <div style={{ height:2, background:'rgba(255,255,255,0.05)', borderRadius:1, overflow:'hidden', marginBottom:3, position:'relative' }}>
-                            <div style={{ height:'100%', borderRadius:1, width:`${a.progress}%`, background:`linear-gradient(90deg, ${a.color}, ${a.color}99)`, animation:`dashFillBar 1.5s ease ${i*0.12}s both`, position:'relative', overflow:'hidden' }}>
-                              {a.status !== 'Idle' && (
-                                <div style={{ position:'absolute', inset:0, background:'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)', animation:'dashShimmer 2.5s ease-in-out infinite' }} />
-                              )}
-                            </div>
-                          </div>
-                          <div style={{ fontSize:8, color:C.textMut, display:'flex', justifyContent:'space-between' }}>
-                            <span style={{ maxWidth:'78%', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{a.task}</span>
-                            <span style={{ fontWeight:700, color:a.color }}>{a.progress}%</span>
+                          <div style={{ fontSize:9, color:C.textMut, marginBottom:6, lineHeight:1.5 }}>{ag.desc}</div>
+                          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                            <span style={{ fontSize:8, color:C.textMut }}>{ag.infra}</span>
+                            {ag.has ? (
+                              <button
+                                onClick={() => window.location.href = ag.href}
+                                style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 12px', borderRadius:7, border:'none', cursor:'pointer', background:`linear-gradient(135deg, ${ag.color}, ${ag.color}cc)`, color:'#0a0a1a', fontSize:9, fontWeight:800, letterSpacing:'0.05em' }}>
+                                Open Agent <ArrowRight size={9} />
+                              </button>
+                            ) : (
+                              <span style={{ fontSize:8, color:C.textMut }}>Contact admin to activate</span>
+                            )}
                           </div>
                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* RIGHT PANEL */}
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+
+                  {/* Subscription Card */}
+                  <div style={{ borderRadius:10, background:C.bgCard, border:`1px solid ${C.border}`, overflow:'hidden', animation:'dashFadeIn 0.5s ease 0.15s both' }}>
+                    <div style={{ padding:'9px 12px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', gap:6 }}>
+                      <CreditCard size={12} color={C.purple} />
+                      <span style={{ fontSize:11, fontWeight:700 }}>Subscription</span>
+                    </div>
+                    <div style={{ padding:'12px' }}>
+                      {userProfile?.tenant ? (
+                        <>
+                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                            <div>
+                              <div style={{ fontSize:13, fontWeight:800 }}>{userProfile.tenant.name}</div>
+                              <div style={{ fontSize:9, color:C.textMut, marginTop:1 }}>Organisation account</div>
+                            </div>
+                            <div style={{ textAlign:'right' }}>
+                              <div style={{ fontSize:11, fontWeight:700, color:C.gold }}>{userProfile.tenant.subscription_type.toUpperCase()}</div>
+                              <div style={{ fontSize:9, color: userProfile.tenant.subscription_status === 'active' ? C.green : C.textMut, fontWeight:600 }}>{userProfile.tenant.subscription_status}</div>
+                            </div>
+                          </div>
+                          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
+                            {[
+                              { l:'MARK Agent',  v: userProfile.can_access_mark ? 'Enabled' : 'Disabled', c: userProfile.can_access_mark ? C.green : C.textMut },
+                              { l:'HR Agent',    v: userProfile.can_access_hr   ? 'Enabled' : 'Disabled', c: userProfile.can_access_hr   ? C.green : C.textMut },
+                            ].map(r => (
+                              <div key={r.l} style={{ padding:'7px 9px', borderRadius:7, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)' }}>
+                                <div style={{ fontSize:8, color:C.textMut, marginBottom:2 }}>{r.l}</div>
+                                <div style={{ fontSize:10, fontWeight:700, color:r.c }}>{r.v}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ textAlign:'center', padding:'20px 0' }}>
+                          <AlertCircle size={24} color={C.textMut} style={{ marginBottom:8 }} />
+                          <div style={{ fontSize:11, color:C.textMut, lineHeight:1.5 }}>No organisation assigned.<br/>Contact your administrator.</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Getting Started */}
+                  <div style={{ borderRadius:10, background:C.bgCard, border:`1px solid ${C.border}`, overflow:'hidden', animation:'dashFadeIn 0.5s ease 0.25s both', flex:1 }}>
+                    <div style={{ padding:'9px 12px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', gap:6 }}>
+                      <Sparkles size={12} color={C.gold} />
+                      <span style={{ fontSize:11, fontWeight:700 }}>Quick Start</span>
+                    </div>
+                    <div style={{ padding:'10px 12px', display:'flex', flexDirection:'column', gap:6 }}>
+                      {[
+                        { icon:'💬', label:'Chat with MARK', desc:'Run marketing tasks', ok: agentStatus?.can_access_mark ?? userProfile?.can_access_mark ?? false, href:'/agents/mark' },
+                        { icon:'📄', label:'Screen Candidates', desc:'Upload CVs to HR Agent', ok: agentStatus?.can_access_hr ?? userProfile?.can_access_hr ?? false, href:'/hr-agent' },
+                        { icon:'⚙️', label:'Account Settings', desc:'Profile & integration', ok: true, href:'', onCl: () => setActiveNav('Settings') },
+                      ].map(item => (
+                        <button
+                          key={item.label}
+                          disabled={!item.ok}
+                          onClick={() => item.onCl ? item.onCl() : (item.href && (window.location.href = item.href))}
+                          style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:8, background: item.ok ? 'rgba(255,255,255,0.03)' : 'transparent', border:`1px solid ${item.ok ? 'rgba(255,255,255,0.08)' : 'transparent'}`, cursor: item.ok ? 'pointer' : 'default', textAlign:'left', width:'100%', opacity: item.ok ? 1 : 0.45, transition:'all 0.15s' }}
+                          onMouseEnter={e => item.ok && ((e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)')}
+                          onMouseLeave={e => item.ok && ((e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)')}>
+                          <span style={{ fontSize:14 }}>{item.icon}</span>
+                          <div style={{ flex:1, textAlign:'left' }}>
+                            <div style={{ fontSize:10, fontWeight:600, color:C.text }}>{item.label}</div>
+                            <div style={{ fontSize:8, color:C.textMut }}>{item.desc}</div>
+                          </div>
+                          {item.ok && <ChevronRight size={11} color={C.textMut} />}
+                        </button>
                       ))}
                     </div>
                   </div>
-                </div>
 
-                {/* Activity Feed */}
-                <div style={{ borderRadius:10, background:C.bgCard, border:`1px solid ${C.border}`, overflow:'hidden', display:'flex', flexDirection:'column' }}>
-                  <div style={{ padding:'9px 12px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
-                    <div style={{ fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:6 }}>
-                      <Activity size={12} color={C.gold} /> Activity Feed
+                  {/* Support */}
+                  <div style={{ padding:'10px 12px', borderRadius:10, background:`${C.purple}08`, border:`1px solid ${C.purple}22`, display:'flex', alignItems:'center', gap:10, animation:'dashFadeIn 0.5s ease 0.35s both' }}>
+                    <Mail size={14} color={C.purpleLight} style={{ flexShrink:0 }} />
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:10, fontWeight:700, marginBottom:1 }}>Need help?</div>
+                      <div style={{ fontSize:8, color:C.textMut }}>Contact your SIA account manager</div>
                     </div>
-                    <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-                      <div style={{ width:5, height:5, borderRadius:3, background:C.green, animation:'dashPulse 1.5s ease-in-out infinite' }} />
-                      <span style={{ fontSize:8, color:C.green, fontWeight:700, filter:'brightness(1.2)' }}>Live</span>
-                    </div>
+                    <button
+                      onClick={() => window.open('mailto:support@siasolutions.com')}
+                      style={{ padding:'5px 11px', borderRadius:7, border:`1px solid ${C.purple}44`, background:'transparent', color:C.purpleLight, fontSize:9, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
+                      Contact
+                    </button>
                   </div>
-                  <div style={{ padding:'6px 10px', flex:1, overflow:'auto' }}>
-                    {FEED.slice(0, visFeed).map((item, i) => (
-                      <div key={i} style={{ display:'flex', gap:7, padding:'6px 0', borderBottom: i < visFeed-1 ? '1px solid rgba(255,255,255,0.04)' : 'none', animation:'dashSlideIn 0.4s ease both' }}>
-                        <div style={{ width:5, height:5, borderRadius:3, background:item.color, marginTop:4, flexShrink:0, boxShadow:`0 0 4px ${item.color}40` }} />
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontSize:9, lineHeight:1.5 }}>
-                            <span style={{ color:item.color, fontWeight:700 }}>{item.agent}</span>{' '}
-                            <span style={{ color:C.textSec }}>{item.text}</span>
-                          </div>
-                          <div style={{ fontSize:8, color:C.textMut, marginTop:2 }}>{item.time}</div>
-                        </div>
-                      </div>
-                    ))}
-                    {visFeed < FEED.length && (
-                      <div style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 0', color:C.textMut, fontSize:9 }}>
-                        <div style={{ display:'flex', gap:2 }}>
-                          {[0,1,2].map(j => <div key={j} style={{ width:3, height:3, borderRadius:2, background:C.purple, animation:`dashTyping 1.4s ease infinite ${j*0.2}s` }} />)}
-                        </div>
-                        <span>Listening for events...</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* PERFORMANCE CHART */}
-              <div style={{ borderRadius:10, background:C.bgCard, border:`1px solid ${C.border}`, padding:'10px 14px', animation:'dashFadeIn 0.6s ease 0.5s both' }}>
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-                  <div style={{ fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:6 }}>
-                    <TrendingUp size={12} color={C.green} /> Weekly Performance
-                  </div>
-                  <div style={{ display:'flex', gap:12, fontSize:8, color:C.textSec }}>
-                    <span style={{ display:'flex', alignItems:'center', gap:4 }}><div style={{ width:8, height:2, borderRadius:1, background:C.purple }} /> Tasks</span>
-                    <span style={{ display:'flex', alignItems:'center', gap:4 }}><div style={{ width:8, height:2, borderRadius:1, background:C.gold }} /> Efficiency</span>
-                  </div>
-                </div>
-                <div style={{ height:90 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={CHART}>
-                      <defs>
-                        <linearGradient id="gPurple" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={C.purple} stopOpacity={0.25} />
-                          <stop offset="100%" stopColor={C.purple} stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={C.gold} stopOpacity={0.15} />
-                          <stop offset="100%" stopColor={C.gold} stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <XAxis dataKey="d" tick={{ fill: C.textMut, fontSize:8 }} axisLine={false} tickLine={false} dy={4} />
-                      <Area type="monotone" dataKey="tasks" stroke={C.purple} strokeWidth={1.5} fill="url(#gPurple)" dot={false} />
-                      <Area type="monotone" dataKey="eff" stroke={C.gold} strokeWidth={1.5} fill="url(#gGold)" dot={false} />
-                    </AreaChart>
-                  </ResponsiveContainer>
                 </div>
               </div>
             </>

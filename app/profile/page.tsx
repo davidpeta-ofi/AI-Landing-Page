@@ -1,385 +1,434 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import Navbar from '@/components/ui/Navbar';
+import Footer from '@/components/ui/Footer';
+import {
+  fetchProfile, updateProfile, fetchAgentStatus,
+  isAuthenticated, refreshAccessToken, clearAuth, apiFetch,
+  type UserProfile, type AgentStatus,
+} from '@/lib/api';
 
-const TABS = ['Overview', 'Activity'];
-
-const STATS = [
-  { label: 'Documents Processed', value: '1,284', delta: '+12 this week' },
-  { label: 'Agents Used', value: '2', delta: 'HR · Marketing' },
-  { label: 'HR Agent', value: 'Pro', delta: 'Renews Jan 15, 2026', isSubscription: true, badge: 'ACTIVE' },
-  { label: 'Marketing Agent', value: 'Pro', delta: 'Renews Jan 15, 2026', isSubscription: true, badge: 'ACTIVE' },
-];
-
-const RECENT = [
-  { type: 'HR',        name: 'Q4_Hiring_Plan.pdf',         time: '2 hours ago',   status: 'done' },
-  { type: 'Marketing', name: 'Campaign_Brief_Nov.docx',    time: '5 hours ago',   status: 'done' },
-  { type: 'HR',        name: 'Contractor_Agreements.pdf',  time: 'Yesterday',     status: 'done' },
-  { type: 'Marketing', name: 'Brand_Guidelines_v3.pptx',  time: '2 days ago',    status: 'done' },
-  { type: 'HR',        name: 'Onboarding_Checklist.xlsx',  time: '3 days ago',    status: 'done' },
-];
-
-const TYPE_COLOR: Record<string, string> = {
-  HR: '#f0b849',
-  Marketing: '#a78bfa',
+// ── design tokens ─────────────────────────────────────────
+const T = {
+  bg:      '#07060F',
+  card:    'rgba(240,184,73,0.04)',
+  border:  'rgba(240,184,73,0.10)',
+  gold:    '#f0b849',
+  green:   '#4ade80',
+  purple:  '#a78bfa',
+  cyan:    '#22d3ee',
+  red:     '#f87171',
+  text:    '#f0ead8',
+  textSec: 'rgba(200,185,150,0.75)',
+  textMut: 'rgba(200,185,150,0.38)',
+  mono:    "'DM Mono', monospace",
 };
+function M(s: React.CSSProperties): React.CSSProperties {
+  return { fontFamily: T.mono, ...s };
+}
 
+// ── small helpers ─────────────────────────────────────────
+function initials(name: string) {
+  return (name || '?')
+    .split(' ')
+    .filter(Boolean)
+    .map((w: string) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function Chip({ label, color, dim }: { label: string; color: string; dim: string }) {
+  return (
+    <span style={M({
+      fontSize: 8, padding: '2px 8px', borderRadius: 4, fontWeight: 700,
+      letterSpacing: '0.1em', color, background: dim,
+      border: `1px solid ${color}35`,
+    })}>{label}</span>
+  );
+}
+
+function AgentCard({
+  name, desc, has, href, color,
+}: {
+  name: string; desc: string; has: boolean; href: string; color: string;
+}) {
+  return (
+    <div style={{
+      borderRadius: 14, border: `1px solid ${has ? color + '30' : T.border}`,
+      background: has ? `${color}06` : T.card, padding: '20px 22px',
+      display: 'flex', flexDirection: 'column', gap: 10,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: has ? color : T.textSec }}>{name}</div>
+        <div style={{
+          width: 8, height: 8, borderRadius: 4,
+          background: has ? T.green : T.textMut,
+          boxShadow: has ? `0 0 6px ${T.green}` : 'none',
+        }} />
+      </div>
+      <div style={M({ fontSize: 10, color: T.textMut, lineHeight: 1.55 })}>{desc}</div>
+      {has ? (
+        <Link href={href} style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '8px 14px', borderRadius: 8,
+          background: `linear-gradient(135deg,${color}18,${color}08)`,
+          border: `1px solid ${color}35`,
+          color, textDecoration: 'none',
+          ...M({ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em' }),
+        }}>
+          → Open Agent
+        </Link>
+      ) : (
+        <div style={M({ fontSize: 9.5, color: T.textMut })}>Contact your admin for access.</div>
+      )}
+    </div>
+  );
+}
+
+// ── main component ─────────────────────────────────────────
 export default function ProfilePage() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState('Overview');
-  const [editMode, setEditMode] = useState(false);
-  const [name, setName] = useState('Alex Johnson');
-  const [role, setRole] = useState('Head of Operations');
-  const [email, setEmail] = useState('alex.johnson@company.com');
-  const [scanLine, setScanLine] = useState(0);
 
-  useEffect(() => { setTimeout(() => setMounted(true), 60); }, []);
+  const [profile, setProfile]     = useState<UserProfile | null>(null);
+  const [agents, setAgents]       = useState<AgentStatus | null>(null);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState<string | null>(null);
+  const [editMode, setEditMode]   = useState(false);
+  const [fullName, setFullName]   = useState('');
+  const [phone, setPhone]         = useState('');
+  const [saving, setSaving]       = useState(false);
+  const [saveMsg, setSaveMsg]     = useState('');
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  useEffect(() => {
-    const iv = setInterval(() => setScanLine(p => (p + 1) % 100), 30);
-    return () => clearInterval(iv);
-  }, []);
+  const load = useCallback(async () => {
+    if (!isAuthenticated()) {
+      router.replace('/');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const [p, a] = await Promise.all([
+        fetchProfile(),
+        fetchAgentStatus().catch(() => null),
+      ]);
+      setProfile(p);
+      if (a) setAgents(a);
+      setFullName(p.full_name ?? '');
+      setPhone(p.phone ?? '');
+    } catch (e: any) {
+      const msg = e?.message ?? '';
+      if (msg.includes('401')) {
+        const t = await refreshAccessToken();
+        if (t) { load(); return; }
+        router.replace('/');
+        return;
+      }
+      setError(msg || 'Failed to load profile.');
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const updated = await updateProfile({ full_name: fullName, phone: phone || undefined });
+      setProfile(updated);
+      setEditMode(false);
+      setSaveMsg('Saved!');
+      setTimeout(() => setSaveMsg(''), 2000);
+    } catch (e: any) {
+      setSaveMsg(e?.message ?? 'Save failed');
+    }
+    setSaving(false);
+  };
+
+  const ini = initials(profile?.full_name ?? '');
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try { await apiFetch('/api/auth/logout/', { method: 'POST' }); } catch {}
+    clearAuth();
+    router.replace('/');
+  };
 
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&display=swap');
-
-        @keyframes pp-fadeUp {
-          from { opacity:0; transform:translateY(18px); }
-          to   { opacity:1; transform:translateY(0); }
+        @keyframes pr-fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pr-scan   { from{top:0} to{top:100%} }
+        @keyframes pr-pulse  { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
+        @keyframes pr-spin   { to{transform:rotate(360deg)} }
+        @keyframes pr-grid   { 0%,100%{opacity:0.025} 50%{opacity:0.06} }
+        .pr-spinner {
+          display:inline-block;width:16px;height:16px;
+          border:2px solid rgba(240,184,73,0.15);border-top-color:${T.gold};
+          border-radius:50%;animation:pr-spin 0.7s linear infinite;
         }
-        @keyframes pp-pulse {
-          0%,100% { opacity:0.4; transform:scale(1); }
-          50%      { opacity:1;   transform:scale(1.3); }
+        .pr-input {
+          width:100%;padding:9px 12px;border-radius:8px;box-sizing:border-box;
+          background:rgba(240,184,73,0.04);border:1px solid rgba(240,184,73,0.18);
+          color:${T.text};font-family:${T.mono};font-size:12px;
+          outline:none;transition:border-color 0.15s;
         }
-        @keyframes pp-glow {
-          0%,100% { box-shadow: 0 0 16px rgba(240,184,73,0.2); }
-          50%      { box-shadow: 0 0 32px rgba(240,184,73,0.45); }
+        .pr-input:focus { border-color:rgba(240,184,73,0.5); }
+        .pr-input::placeholder { color:${T.textMut}; }
+        .pr-btn {
+          padding:9px 18px;border-radius:8px;border:none;cursor:pointer;
+          font-family:${T.mono};font-size:10px;font-weight:700;
+          letter-spacing:0.08em;text-transform:uppercase;
+          background:linear-gradient(135deg,#e8a835,#f5d070);color:#0a0a1a;
+          transition:box-shadow 0.2s,transform 0.1s;
         }
-        @keyframes pp-border-flow {
-          0%   { background-position: 0% 50%; }
-          100% { background-position: 300% 50%; }
+        .pr-btn:hover { box-shadow:0 4px 18px rgba(240,184,73,0.3);transform:translateY(-1px); }
+        .pr-btn:disabled { opacity:0.5;cursor:not-allowed; }
+        .pr-ghost {
+          padding:8px 14px;border-radius:8px;cursor:pointer;
+          font-family:${T.mono};font-size:10px;letter-spacing:0.07em;text-transform:uppercase;
+          background:transparent;border:1px solid rgba(240,184,73,0.15);color:${T.textMut};
+          transition:all 0.15s;
         }
-        @keyframes pp-corner {
-          0%,100% { opacity:0.25; } 50% { opacity:0.9; }
-        }
-
-        .pp-wrap {
-          min-height: 100vh;
-          background: radial-gradient(ellipse at 65% 15%, #0d0c28 0%, #080718 45%, #050412 100%);
-          font-family: 'DM Mono', monospace;
-          padding-top: 88px;
-          color: #f0ead8;
-        }
-        .pp-inner {
-          max-width: 900px;
-          margin: 0 auto;
-          padding: 48px 24px 96px;
-        }
-
-        .pp-back {
-          display: inline-flex; align-items: center; gap: 6px;
-          background: none; border: none; cursor: pointer; padding: 0;
-          margin-bottom: 36px;
-          font-family: 'DM Mono', monospace; font-size: 10px;
-          color: rgba(240,184,73,0.4); letter-spacing: 0.1em; text-transform: uppercase;
-          transition: color 0.15s;
-        }
-        .pp-back:hover { color: rgba(240,184,73,0.75); }
-
-        .pp-hero {
-          display: flex; align-items: flex-start; gap: 28px;
-          padding: 28px 28px 24px;
-          border-radius: 14px;
-          border: 1px solid rgba(240,184,73,0.15);
-          background: rgba(240,184,73,0.025);
-          margin-bottom: 28px;
-          position: relative; overflow: hidden;
-          animation: pp-glow 4s ease-in-out infinite;
-        }
-        .pp-hero::before {
-          content: '';
-          position: absolute; inset: -1px; border-radius: inherit;
-          background: linear-gradient(90deg, transparent, rgba(240,184,73,0.4) 40%, rgba(245,208,112,0.7) 50%, rgba(240,184,73,0.4) 60%, transparent);
-          background-size: 300% 100%;
-          animation: pp-border-flow 4s linear infinite;
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor; mask-composite: exclude;
-          padding: 1px; pointer-events: none;
-        }
-
-        .pp-avatar-wrap { position: relative; flex-shrink: 0; width: 80px; height: 80px; }
-        .pp-avatar {
-          width: 80px; height: 80px; border-radius: 14px;
-          background: linear-gradient(135deg, rgba(240,184,73,0.12), rgba(240,184,73,0.05));
-          border: 1px solid rgba(240,184,73,0.3);
-          display: flex; align-items: center; justify-content: center;
-          font-size: 28px; font-weight: 600; color: #f0b849;
-          position: relative; overflow: hidden; letter-spacing: -0.02em;
-        }
-        .pp-avatar-scan {
-          position: absolute; left: 0; right: 0; height: 1.5px;
-          background: linear-gradient(90deg, transparent, rgba(240,184,73,0.8) 40%, rgba(245,208,112,1) 50%, rgba(240,184,73,0.8) 60%, transparent);
-          pointer-events: none; z-index: 2; transition: top 0.03s linear;
-        }
-        .pp-status-dot {
-          position: absolute; bottom: -3px; right: -3px;
-          width: 12px; height: 12px; border-radius: 50%;
-          background: #4ade80; border: 2px solid #080718;
-          box-shadow: 0 0 8px rgba(74,222,128,0.8);
-          animation: pp-pulse 1.5s ease-in-out infinite;
-        }
-        .pp-av-corner {
-          position: absolute; width: 8px; height: 8px;
-          border-color: rgba(240,184,73,0.7); border-style: solid;
-          animation: pp-corner 2s ease-in-out infinite; pointer-events: none; z-index: 3;
-        }
-        .pp-av-corner.tl { top: -1px;    left: -1px;  border-width: 1.5px 0 0 1.5px; }
-        .pp-av-corner.tr { top: -1px;    right: -1px; border-width: 1.5px 1.5px 0 0; animation-delay: 0.5s; }
-        .pp-av-corner.bl { bottom: -1px; left: -1px;  border-width: 0 0 1.5px 1.5px; animation-delay: 1s; }
-        .pp-av-corner.br { bottom: -1px; right: -1px; border-width: 0 1.5px 1.5px 0; animation-delay: 1.5s; }
-
-        .pp-hero-info { flex: 1; min-width: 0; }
-        .pp-tag {
-          display: inline-flex; align-items: center; gap: 5px;
-          font-size: 9px; color: rgba(240,184,73,0.45);
-          letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 8px;
-        }
-        .pp-tag-dot { width: 4px; height: 4px; border-radius: 50%; background: #f0b849; animation: pp-pulse 2s ease-in-out infinite; }
-        .pp-name {
-          font-size: 22px; font-weight: 600; color: #f0ead8;
-          letter-spacing: -0.01em; margin: 0 0 4px;
-          display: flex; align-items: center; gap: 10px;
-        }
-        .pp-role { font-size: 12px; color: rgba(200,185,150,0.45); letter-spacing: 0.04em; margin-bottom: 14px; }
-        .pp-email {
-          font-size: 11px; color: rgba(240,184,73,0.55); letter-spacing: 0.04em;
-          display: flex; align-items: center; gap: 6px;
-        }
-
-        .pp-edit-btn {
-          margin-left: auto; align-self: flex-start; flex-shrink: 0;
-          padding: 8px 18px; border-radius: 7px;
-          border: 1px solid rgba(240,184,73,0.3);
-          background: rgba(240,184,73,0.06);
-          color: #f0b849; font-family: 'DM Mono', monospace;
-          font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
-          cursor: pointer; transition: all 0.2s;
-        }
-        .pp-edit-btn:hover { background: rgba(240,184,73,0.12); border-color: rgba(240,184,73,0.55); }
-
-        .pp-input {
-          background: rgba(240,184,73,0.06);
-          border: 1px solid rgba(240,184,73,0.3);
-          border-radius: 6px; padding: 6px 10px;
-          color: #f0ead8; font-family: 'DM Mono', monospace;
-          font-size: inherit; letter-spacing: inherit; outline: none;
-          width: 100%; transition: border-color 0.2s;
-        }
-        .pp-input:focus { border-color: rgba(240,184,73,0.65); }
-
-        .pp-tabs {
-          display: flex; gap: 2px;
-          border-bottom: 1px solid rgba(240,184,73,0.1);
-          margin-bottom: 28px;
-        }
-        .pp-tab {
-          padding: 10px 20px; background: none; border: none;
-          font-family: 'DM Mono', monospace; font-size: 10.5px;
-          letter-spacing: 0.1em; text-transform: uppercase;
-          cursor: pointer; color: rgba(200,185,150,0.35);
-          border-bottom: 2px solid transparent; margin-bottom: -1px;
-          transition: color 0.2s, border-color 0.2s;
-        }
-        .pp-tab.active { color: #f0b849; border-bottom-color: #f0b849; }
-        .pp-tab:hover:not(.active) { color: rgba(200,185,150,0.65); }
-
-        .pp-stats {
-          display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
-          margin-bottom: 28px;
-        }
-        @media (min-width: 640px) { .pp-stats { grid-template-columns: repeat(4, 1fr); } }
-
-        .pp-stat {
-          padding: 16px 18px; border-radius: 11px;
-          border: 1px solid rgba(240,184,73,0.1);
-          background: rgba(240,184,73,0.02);
-          animation: pp-fadeUp 0.4s ease both;
-          transition: border-color 0.2s, background 0.2s;
-        }
-        .pp-stat:hover { border-color: rgba(240,184,73,0.25); background: rgba(240,184,73,0.05); }
-        .pp-stat-val { font-size: 20px; font-weight: 600; color: #f0b849; letter-spacing: -0.02em; margin-bottom: 4px; }
-        .pp-stat-label { font-size: 9.5px; color: rgba(200,185,150,0.4); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
-        .pp-stat-delta { font-size: 9.5px; color: rgba(200,185,150,0.3); letter-spacing: 0.03em; }
-
-        .pp-section-label {
-          font-size: 9.5px; color: rgba(240,184,73,0.4); letter-spacing: 0.14em; text-transform: uppercase;
-          margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
-        }
-        .pp-section-label::after { content:''; flex:1; height:1px; background:rgba(240,184,73,0.08); }
-
-        .pp-file-list { display: flex; flex-direction: column; gap: 8px; }
-        .pp-file {
-          display: flex; align-items: center; gap: 12px;
-          padding: 12px 14px; border-radius: 10px;
-          border: 1px solid rgba(240,184,73,0.08);
-          background: rgba(255,255,255,0.015);
-          animation: pp-fadeUp 0.3s ease both;
-          transition: border-color 0.2s, background 0.2s;
-          cursor: default;
-        }
-        .pp-file:hover { border-color: rgba(240,184,73,0.2); background: rgba(240,184,73,0.04); }
-        .pp-file-type {
-          font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase;
-          padding: 3px 8px; border-radius: 4px; font-weight: 500; flex-shrink: 0;
-        }
-        .pp-file-name { flex: 1; font-size: 12px; color: #f0ead8; letter-spacing: 0.01em; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pp-file-time { font-size: 10px; color: rgba(200,185,150,0.3); letter-spacing: 0.03em; flex-shrink: 0; }
-        .pp-file-done { font-size: 9px; color: #4ade80; letter-spacing: 0.06em; flex-shrink: 0; }
+        .pr-ghost:hover { border-color:rgba(240,184,73,0.3);color:${T.textSec}; }
       `}</style>
 
-      <div className="pp-wrap">
-        <div className="pp-inner" style={{ opacity: mounted ? 1 : 0, transition: 'opacity 0.3s' }}>
+      <div style={{ minHeight: '100vh', background: T.bg, fontFamily: T.mono }}>
+        <Navbar />
 
-          <button className="pp-back" onClick={() => router.back()}>
-            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 5l-7 7 7 7"/>
-            </svg>
-            back
-          </button>
+        {/* Subtle grid */}
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+          backgroundImage: 'linear-gradient(rgba(240,184,73,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(240,184,73,0.03) 1px,transparent 1px)',
+          backgroundSize: '60px 60px', animation: 'pr-grid 6s ease-in-out infinite',
+        }} />
 
-          {/* Hero */}
-          <div className="pp-hero" style={{ animation: mounted ? 'pp-fadeUp 0.4s ease both' : 'none' }}>
-            <div className="pp-avatar-wrap">
-              <div className="pp-avatar">
-                {name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-                <div className="pp-avatar-scan" style={{ top: `${scanLine}%` }} />
-              </div>
-              <span className="pp-av-corner tl" /><span className="pp-av-corner tr" />
-              <span className="pp-av-corner bl" /><span className="pp-av-corner br" />
-              <div className="pp-status-dot" />
+        <div style={{ maxWidth: 860, margin: '0 auto', padding: '100px 24px 80px', position: 'relative', zIndex: 1 }}>
+
+          {loading && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '40px 0', justifyContent: 'center', color: T.textMut }}>
+              <span className="pr-spinner" />
+              <span style={M({ fontSize: 11 })}>Loading profile…</span>
             </div>
+          )}
 
-            <div className="pp-hero-info">
-              <div className="pp-tag"><span className="pp-tag-dot" />AGENT PROFILE</div>
-              {editMode ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-                  <input className="pp-input" style={{ fontSize: 18, fontWeight: 600 }} value={name}  onChange={e => setName(e.target.value)} />
-                  <input className="pp-input" style={{ fontSize: 12 }} value={role}  onChange={e => setRole(e.target.value)} />
-                  <input className="pp-input" style={{ fontSize: 11 }} value={email} onChange={e => setEmail(e.target.value)} />
-                </div>
-              ) : (
-                <>
-                  <div className="pp-name">
-                    {name}
-                    <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, background: 'rgba(74,222,128,0.1)', color: '#4ade80', letterSpacing: '0.08em', textTransform: 'uppercase' }}>ACTIVE</span>
-                  </div>
-                  <div className="pp-role">{role}</div>
-                  <div className="pp-email">
-                    <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                    </svg>
-                    {email}
-                  </div>
-                </>
-              )}
+          {error && !loading && (
+            <div style={{ padding: '16px 20px', borderRadius: 10, background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.2)', color: T.red, marginBottom: 20 }}>
+              <span style={M({ fontSize: 11 })}>⚠ {error}</span>
             </div>
+          )}
 
-            <button className="pp-edit-btn" onClick={() => setEditMode(e => !e)}>
-              {editMode ? '✓ Save' : '✎ Edit'}
-            </button>
-          </div>
+          {profile && !loading && (
+            <>
+              {/* Profile hero */}
+              <div style={{
+                borderRadius: 18, border: '1px solid rgba(240,184,73,0.15)',
+                background: 'rgba(240,184,73,0.025)', padding: '32px 36px',
+                marginBottom: 24, position: 'relative', overflow: 'hidden',
+                boxShadow: '0 0 40px rgba(240,184,73,0.05)',
+                animation: 'pr-fadeUp 0.4s ease both',
+              }}>
+                {/* shimmer border */}
+                <div style={{
+                  position: 'absolute', inset: -1, borderRadius: 18, pointerEvents: 'none',
+                  background: 'linear-gradient(90deg,transparent,rgba(240,184,73,0.35) 40%,rgba(245,208,112,0.65) 50%,rgba(240,184,73,0.35) 60%,transparent)',
+                  backgroundSize: '300% 100%', animation: 'pr-scan 5s linear infinite',
+                  WebkitMask: 'linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0)',
+                  WebkitMaskComposite: 'xor', maskComposite: 'exclude', padding: 1,
+                }} />
 
-          {/* Tabs */}
-          <div className="pp-tabs" style={{ animation: mounted ? 'pp-fadeUp 0.4s ease 0.08s both' : 'none' }}>
-            {TABS.map(t => (
-              <button key={t} className={`pp-tab${activeTab === t ? ' active' : ''}`} onClick={() => setActiveTab(t)}>
-                {t}
-              </button>
-            ))}
-          </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 28 }}>
+                  {/* Avatar */}
+                  <div style={{
+                    width: 88, height: 88, borderRadius: 16, flexShrink: 0,
+                    background: 'linear-gradient(135deg,rgba(240,184,73,0.16),rgba(240,184,73,0.06))',
+                    border: '1px solid rgba(240,184,73,0.35)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    position: 'relative', overflow: 'hidden',
+                  }}>
+                    <span style={{ fontSize: 28, fontWeight: 700, color: T.gold, letterSpacing: '-0.02em' }}>{ini}</span>
+                    <div style={{
+                      position: 'absolute', left: 0, right: 0, height: 1.5,
+                      background: 'linear-gradient(90deg,transparent,rgba(240,184,73,0.9),transparent)',
+                      animation: 'pr-scan 3s linear infinite', pointerEvents: 'none',
+                    }} />
+                  </div>
 
-          {/* Overview */}
-          {activeTab === 'Overview' && (
-            <div style={{ animation: 'pp-fadeUp 0.3s ease both' }}>
-              <div className="pp-section-label">performance metrics</div>
-              <div className="pp-stats">
-                {(STATS as any[]).map((s, i) => (
-                  <div key={s.label} className="pp-stat" style={{ animationDelay: `${i * 0.06}s`, borderColor: s.isSubscription ? 'rgba(240,184,73,0.2)' : undefined }}>
-                    <div className="pp-stat-label">{s.label}</div>
-                    <div className="pp-stat-val" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {s.value}
-                      {s.badge && (
-                        <span style={{ fontSize: 8, padding: '2px 6px', borderRadius: 4, background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)', letterSpacing: '0.08em', fontWeight: 500 }}>
-                          {s.badge}
-                        </span>
-                      )}
-                    </div>
-                    <div className="pp-stat-delta">{s.delta}</div>
-                    {s.isSubscription && (
-                      <button style={{ marginTop: 10, fontSize: 9, padding: '3px 10px', borderRadius: 4, background: 'rgba(240,184,73,0.08)', border: '1px solid rgba(240,184,73,0.25)', color: 'rgba(240,184,73,0.7)', fontFamily: "'DM Mono',monospace", letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>
-                        Manage →
-                      </button>
+                  {/* Info */}
+                  <div style={{ flex: 1 }}>
+                    {editMode ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <input
+                          className="pr-input"
+                          value={fullName}
+                          onChange={e => setFullName(e.target.value)}
+                          placeholder="Full name"
+                        />
+                        <input
+                          className="pr-input"
+                          value={phone}
+                          onChange={e => setPhone(e.target.value)}
+                          placeholder="Phone (optional)"
+                        />
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button className="pr-btn" onClick={save} disabled={saving}>
+                            {saving ? 'Saving…' : '→ Save'}
+                          </button>
+                          <button className="pr-ghost" onClick={() => {
+                            setEditMode(false);
+                            setFullName(profile.full_name ?? '');
+                            setPhone(profile.phone ?? '');
+                          }}>
+                            Cancel
+                          </button>
+                        </div>
+                        {saveMsg && <div style={M({ fontSize: 10, color: T.green })}>{saveMsg}</div>}
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                          <span style={{ fontSize: 22, fontWeight: 700, color: T.text }}>{profile.full_name || 'User'}</span>
+                          {profile.role === 'super_admin' && (
+                            <Chip label="SUPER ADMIN" color={T.gold} dim="rgba(240,184,73,0.12)" />
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
+                          <div style={M({ fontSize: 11, color: 'rgba(240,184,73,0.52)' })}>✉ {profile.email}</div>
+                          {profile.phone && (
+                            <div style={M({ fontSize: 11, color: 'rgba(240,184,73,0.52)' })}>📱 {profile.phone}</div>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <Chip label={profile.is_active ? 'ACTIVE' : 'INACTIVE'} color={profile.is_active ? T.green : T.red} dim={profile.is_active ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)'} />
+                          <Chip label={profile.email_confirmed ? 'VERIFIED' : 'UNVERIFIED'} color={profile.email_confirmed ? T.cyan : T.textMut} dim="rgba(34,211,238,0.08)" />
+                          {saveMsg && <span style={M({ fontSize: 10, color: T.green })}>{saveMsg}</span>}
+                        </div>
+                      </>
                     )}
                   </div>
-                ))}
+
+                  {!editMode && (
+                    <button
+                      onClick={() => setEditMode(true)}
+                      style={M({
+                        padding: '9px 18px', borderRadius: 9,
+                        border: '1px solid rgba(240,184,73,0.25)',
+                        background: 'rgba(240,184,73,0.07)',
+                        color: T.gold, fontSize: 9.5, letterSpacing: '0.1em',
+                        textTransform: 'uppercase', cursor: 'pointer',
+                      })}>
+                      ✎ Edit
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="pp-section-label" style={{ marginTop: 28 }}>recent documents</div>
-              <div className="pp-file-list">
-                {RECENT.map((f, i) => (
-                  <div key={i} className="pp-file" style={{ animationDelay: `${i * 0.05}s` }}>
-                    <span className="pp-file-type" style={{ background: `${TYPE_COLOR[f.type]}18`, color: TYPE_COLOR[f.type], border: `1px solid ${TYPE_COLOR[f.type]}30` }}>
-                      {f.type}
-                    </span>
-                    <span className="pp-file-name">{f.name}</span>
-                    <span className="pp-file-time">{f.time}</span>
-                    <span className="pp-file-done">✓ done</span>
-                  </div>
-                ))}
+              {/* Agent access */}
+              <div style={{ marginBottom: 24, animation: 'pr-fadeUp 0.4s ease 0.1s both' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <div style={{ height: 1, flex: 1, background: T.border }} />
+                  <span style={M({ fontSize: 8.5, color: T.textMut, letterSpacing: '0.18em', textTransform: 'uppercase' })}>Your Agents</span>
+                  <div style={{ height: 1, flex: 1, background: T.border }} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <AgentCard
+                    name="Marketing Agent (MARK)"
+                    desc="AI-powered marketing automation, content generation, and campaign intelligence."
+                    has={agents?.can_access_mark ?? profile.can_access_mark}
+                    href="/agents/mark"
+                    color={T.purple}
+                  />
+                  <AgentCard
+                    name="HR Agent"
+                    desc="Recruitment automation, document analysis, and people operations intelligence."
+                    has={agents?.can_access_hr ?? profile.can_access_hr}
+                    href="/hr-agent"
+                    color={T.green}
+                  />
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Activity */}
-          {activeTab === 'Activity' && (
-            <div style={{ animation: 'pp-fadeUp 0.3s ease both' }}>
-              <div className="pp-section-label">agent usage this month</div>
-              {[
-                { label: 'HR Agent',        pct: 64, color: '#f0b849', count: '742 docs' },
-                { label: 'Marketing Agent', pct: 36, color: '#a78bfa', count: '409 docs' },
-              ].map((a, i) => (
-                <div key={a.label} style={{ marginBottom: 18, animation: `pp-fadeUp 0.3s ease ${i * 0.07}s both` }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
-                    <span style={{ fontSize: 11, color: 'rgba(200,185,150,0.65)', letterSpacing: '0.03em' }}>{a.label}</span>
-                    <span style={{ fontSize: 10, color: 'rgba(200,185,150,0.35)', letterSpacing: '0.04em' }}>{a.count} · {a.pct}%</span>
+              {/* Organisation */}
+              {profile.tenant && (
+                <div style={{ animation: 'pr-fadeUp 0.4s ease 0.2s both' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                    <div style={{ height: 1, flex: 1, background: T.border }} />
+                    <span style={M({ fontSize: 8.5, color: T.textMut, letterSpacing: '0.18em', textTransform: 'uppercase' })}>Organisation</span>
+                    <div style={{ height: 1, flex: 1, background: T.border }} />
                   </div>
-                  <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', borderRadius: 3, background: `linear-gradient(90deg, ${a.color}99, ${a.color})`, width: `${a.pct}%`, boxShadow: `0 0 10px ${a.color}55`, transition: 'width 1s cubic-bezier(0.4,0,0.2,1)' }} />
+                  <div style={{ borderRadius: 14, border: `1px solid ${T.border}`, background: T.card, overflow: 'hidden' }}>
+                    {[
+                      { label: 'Company', value: profile.tenant.name },
+                      { label: 'Subscription', value: profile.tenant.subscription_type.toUpperCase() },
+                      { label: 'Status', value: profile.tenant.subscription_status.toUpperCase() },
+                    ].map((row, i, arr) => (
+                      <div key={i} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '13px 18px',
+                        borderBottom: i < arr.length - 1 ? `1px solid ${T.border}` : 'none',
+                      }}>
+                        <span style={M({ fontSize: 11, color: T.textMut })}>{row.label}</span>
+                        <span style={M({ fontSize: 11, color: T.textSec, fontWeight: 600 })}>{row.value}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+              )}
 
-              <div className="pp-section-label" style={{ marginTop: 32 }}>all documents</div>
-              <div className="pp-file-list">
-                {RECENT.map((f, i) => (
-                  <div key={i} className="pp-file" style={{ animationDelay: `${i * 0.05}s` }}>
-                    <span className="pp-file-type" style={{ background: `${TYPE_COLOR[f.type]}18`, color: TYPE_COLOR[f.type], border: `1px solid ${TYPE_COLOR[f.type]}30` }}>
-                      {f.type}
-                    </span>
-                    <span className="pp-file-name">{f.name}</span>
-                    <span className="pp-file-time">{f.time}</span>
-                    <span className="pp-file-done">✓ done</span>
-                  </div>
-                ))}
+              {/* Quick links + Logout */}
+              <div style={{ marginTop: 24, display: 'flex', gap: 10, flexWrap: 'wrap', animation: 'pr-fadeUp 0.4s ease 0.3s both' }}>
+                <Link href="/platform" style={{
+                  padding: '10px 20px', borderRadius: 9,
+                  border: '1px solid rgba(139,92,246,0.2)',
+                  background: 'rgba(139,92,246,0.05)',
+                  color: T.purple, textDecoration: 'none',
+                  ...M({ fontSize: 10, letterSpacing: '0.08em' }),
+                }}>
+                  ⬡ Dashboard
+                </Link>
+                <Link href="/settings" style={{
+                  padding: '10px 20px', borderRadius: 9,
+                  border: '1px solid rgba(240,184,73,0.18)',
+                  background: 'rgba(240,184,73,0.05)',
+                  color: T.gold, textDecoration: 'none',
+                  ...M({ fontSize: 10, letterSpacing: '0.08em' }),
+                }}>
+                  ⚙ Settings
+                </Link>
+                {profile.role === 'super_admin' && (
+                  <Link href="/admin" style={{
+                    padding: '10px 20px', borderRadius: 9,
+                    border: '1px solid rgba(240,184,73,0.35)',
+                    background: 'rgba(240,184,73,0.1)',
+                    color: T.gold, textDecoration: 'none',
+                    ...M({ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em' }),
+                  }}>
+                    🛡 Admin Portal
+                  </Link>
+                )}
+                <button
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  style={{
+                    padding: '10px 20px', borderRadius: 9, cursor: loggingOut ? 'not-allowed' : 'pointer',
+                    border: '1px solid rgba(248,113,113,0.25)',
+                    background: 'rgba(248,113,113,0.05)',
+                    ...M({ fontSize: 10, letterSpacing: '0.08em', color: T.red }),
+                  }}>
+                  {loggingOut ? '···' : '→ Sign Out'}
+                </button>
               </div>
-            </div>
+            </>
           )}
-
         </div>
+
+        <Footer />
       </div>
     </>
   );

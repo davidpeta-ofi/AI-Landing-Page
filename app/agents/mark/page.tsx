@@ -12,18 +12,18 @@ import {
 
 // ── design tokens ─────────────────────────────────────────
 const T = {
-  bg:       '#07060F',
-  bgCard:   '#0D0B1E',
-  border:   'rgba(74,222,128,0.15)',
-  green:    '#4ade80',
-  greenDim: 'rgba(74,222,128,0.1)',
-  gold:     '#f0b849',
-  purple:   '#a78bfa',
-  red:      '#f87171',
-  text:     '#f0ead8',
-  textSec:  'rgba(200,185,150,0.75)',
-  textMut:  'rgba(200,185,150,0.38)',
-  mono:     "'DM Mono', monospace",
+  bg:      '#07060F',
+  bgCard:  '#0D0B1E',
+  border:  'rgba(167,139,250,0.15)',
+  purple:  '#a78bfa',
+  purpleDim: 'rgba(167,139,250,0.12)',
+  gold:    '#f0b849',
+  green:   '#4ade80',
+  red:     '#f87171',
+  text:    '#f0ead8',
+  textSec: 'rgba(200,185,150,0.75)',
+  textMut: 'rgba(200,185,150,0.38)',
+  mono:    "'DM Mono', monospace",
 };
 function M(s: React.CSSProperties): React.CSSProperties {
   return { fontFamily: T.mono, ...s };
@@ -40,44 +40,48 @@ function formatTime(ts: number) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+// ── typing dots ───────────────────────────────────────────
 function TypingDots() {
   return (
     <div style={{ display: 'flex', gap: 4, alignItems: 'center', padding: '4px 0' }}>
       {[0, 1, 2].map(i => (
         <div key={i} style={{
-          width: 6, height: 6, borderRadius: 3, background: T.green,
-          animation: `hr-dot 1.2s ease-in-out ${i * 0.18}s infinite`,
+          width: 6, height: 6, borderRadius: 3, background: T.purple,
+          animation: `mark-dot 1.2s ease-in-out ${i * 0.18}s infinite`,
         }} />
       ))}
     </div>
   );
 }
 
+// ── message bubble ────────────────────────────────────────
 function Bubble({ msg }: { msg: Message }) {
   const isUser = msg.role === 'user';
   return (
     <div style={{
       display: 'flex', flexDirection: isUser ? 'row-reverse' : 'row',
       alignItems: 'flex-end', gap: 10, marginBottom: 14,
-      animation: 'hr-slideIn 0.3s ease both',
+      animation: 'mark-slideIn 0.3s ease both',
     }}>
+      {/* Avatar */}
       {!isUser && (
         <div style={{
           width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-          background: T.greenDim, border: `1px solid rgba(74,222,128,0.3)`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
+          background: T.purpleDim, border: `1px solid rgba(167,139,250,0.3)`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 14,
         }}>
-          👥
+          🎯
         </div>
       )}
+
       <div style={{ maxWidth: '74%' }}>
         <div style={{
-          padding: '11px 15px',
-          borderRadius: isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+          padding: '11px 15px', borderRadius: isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
           background: isUser
             ? 'linear-gradient(135deg,rgba(240,184,73,0.15),rgba(240,184,73,0.08))'
-            : 'rgba(74,222,128,0.06)',
-          border: `1px solid ${isUser ? 'rgba(240,184,73,0.25)' : 'rgba(74,222,128,0.2)'}`,
+            : 'rgba(167,139,250,0.08)',
+          border: `1px solid ${isUser ? 'rgba(240,184,73,0.25)' : 'rgba(167,139,250,0.18)'}`,
           lineHeight: 1.6,
         }}>
           <div style={M({ fontSize: 12.5, color: isUser ? T.gold : T.textSec, whiteSpace: 'pre-wrap', wordBreak: 'break-word' })}>
@@ -92,28 +96,29 @@ function Bubble({ msg }: { msg: Message }) {
   );
 }
 
+// ── suggestion chips ──────────────────────────────────────
 const SUGGESTIONS = [
-  'Write a job description for a Senior React Developer',
-  'Screen these candidates for a Product Manager role',
-  'Create an onboarding plan for a new hire',
-  'Draft interview questions for a Marketing Director',
-  'Analyse this CV and score it against our requirements',
-  'Create a performance review template',
+  'Write a LinkedIn post for our product launch',
+  'Create a Q1 marketing campaign strategy',
+  'Draft 5 email subject lines for our newsletter',
+  'Analyse our target audience for SaaS B2B',
+  'Create social media content calendar for this month',
+  'Write a compelling product description',
 ];
 
-export default function HRAgentPage() {
+export default function MarkAgentPage() {
   const router = useRouter();
 
-  const [profile, setProfile]     = useState<UserProfile | null>(null);
-  const [messages, setMessages]   = useState<Message[]>([]);
-  const [input, setInput]         = useState('');
-  const [sessionId, setSessionId] = useState('');
-  const [typing, setTyping]       = useState(false);
-  const [loading, setLoading]     = useState(true);
-  const [noAccess, setNoAccess]   = useState(false);
-  const [error, setError]         = useState('');
-  const bottomRef                 = useRef<HTMLDivElement>(null);
-  const inputRef                  = useRef<HTMLTextAreaElement>(null);
+  const [profile, setProfile]   = useState<UserProfile | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput]       = useState('');
+  const [sessionId, setSessionId] = useState<string>('');
+  const [typing, setTyping]     = useState(false);
+  const [loading, setLoading]   = useState(true);
+  const [noAccess, setNoAccess] = useState(false);
+  const [error, setError]       = useState('');
+  const bottomRef               = useRef<HTMLDivElement>(null);
+  const inputRef                = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -125,7 +130,7 @@ export default function HRAgentPage() {
     fetchProfile()
       .then(p => {
         setProfile(p);
-        if (!p.can_access_hr) setNoAccess(true);
+        if (!p.can_access_mark) setNoAccess(true);
       })
       .catch(async (e: any) => {
         if (e?.message?.includes('401')) {
@@ -148,16 +153,16 @@ export default function HRAgentPage() {
     setTyping(true);
 
     try {
-      const res = await chatWithAgent('hr', msg, sessionId || undefined);
+      const res = await chatWithAgent('mark', msg, sessionId || undefined);
       if (res.session_id) setSessionId(res.session_id);
       const agentMsg: Message = { id: crypto.randomUUID(), role: 'agent', content: res.response, ts: Date.now() };
       setMessages(prev => [...prev, agentMsg]);
     } catch (e: any) {
       const errMsg = e?.message?.includes('403')
-        ? 'You do not have access to HR Agent. Contact your admin.'
+        ? 'You do not have access to MARK agent. Contact your admin.'
         : e?.message?.includes('401')
           ? 'Session expired. Please log in again.'
-          : 'Failed to reach HR Agent. Please try again.';
+          : 'Failed to reach MARK agent. Please try again.';
       setError(errMsg);
     } finally {
       setTyping(false);
@@ -183,44 +188,45 @@ export default function HRAgentPage() {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&display=swap');
-        @keyframes hr-dot { 0%,60%,100%{transform:translateY(0);opacity:0.3} 30%{transform:translateY(-4px);opacity:1} }
-        @keyframes hr-slideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes hr-pulse { 0%,100%{opacity:0.3} 50%{opacity:0.8} }
-        @keyframes hr-grid { 0%,100%{opacity:0.02} 50%{opacity:0.05} }
-        @keyframes hr-spin { to{transform:rotate(360deg)} }
-        .hr-spinner {
-          width:18px;height:18px;border:2px solid rgba(74,222,128,0.2);
-          border-top-color:${T.green};border-radius:50%;
-          animation:hr-spin 0.7s linear infinite;
+        @keyframes mark-dot { 0%,60%,100%{transform:translateY(0);opacity:0.3} 30%{transform:translateY(-4px);opacity:1} }
+        @keyframes mark-slideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes mark-pulse { 0%,100%{opacity:0.3} 50%{opacity:0.8} }
+        @keyframes mark-grid { 0%,100%{opacity:0.02} 50%{opacity:0.055} }
+        @keyframes mark-spin { to{transform:rotate(360deg)} }
+        .mark-spinner {
+          width:18px;height:18px;border:2px solid rgba(167,139,250,0.2);
+          border-top-color:${T.purple};border-radius:50%;
+          animation:mark-spin 0.7s linear infinite;
         }
-        .hr-input {
+        .mark-input {
           flex:1;padding:12px 14px;border-radius:10px;resize:none;
-          background:rgba(74,222,128,0.03);border:1px solid rgba(74,222,128,0.18);
+          background:rgba(167,139,250,0.04);border:1px solid rgba(167,139,250,0.2);
           color:${T.text};font-family:${T.mono};font-size:13px;
           outline:none;transition:border-color 0.15s;line-height:1.5;
           max-height:160px;overflow-y:auto;
         }
-        .hr-input:focus { border-color:rgba(74,222,128,0.4); }
-        .hr-input::placeholder { color:${T.textMut}; }
-        .hr-send {
+        .mark-input:focus { border-color:rgba(167,139,250,0.45); }
+        .mark-input::placeholder { color:${T.textMut}; }
+        .mark-send {
           padding:12px 22px;border-radius:10px;border:none;cursor:pointer;
-          background:linear-gradient(135deg,#16a34a,#4ade80);
-          color:#0a0a1a;font-family:${T.mono};font-size:12px;font-weight:700;
+          background:linear-gradient(135deg,#7c3aed,#a78bfa);
+          color:#fff;font-family:${T.mono};font-size:12px;font-weight:700;
           letter-spacing:0.08em;text-transform:uppercase;
-          transition:box-shadow 0.2s,transform 0.1s;align-self:flex-end;white-space:nowrap;
+          transition:box-shadow 0.2s,transform 0.1s;align-self:flex-end;
+          white-space:nowrap;
         }
-        .hr-send:hover { box-shadow:0 4px 18px rgba(74,222,128,0.35);transform:translateY(-1px); }
-        .hr-send:disabled { opacity:0.45;cursor:not-allowed;transform:none;box-shadow:none; }
-        .hr-chip {
-          padding:7px 12px;border-radius:8px;border:1px solid rgba(74,222,128,0.18);
-          background:rgba(74,222,128,0.04);color:${T.textSec};
+        .mark-send:hover { box-shadow:0 4px 18px rgba(139,92,246,0.4);transform:translateY(-1px); }
+        .mark-send:disabled { opacity:0.45;cursor:not-allowed;transform:none;box-shadow:none; }
+        .mark-chip {
+          padding:7px 12px;border-radius:8px;border:1px solid rgba(167,139,250,0.2);
+          background:rgba(167,139,250,0.06);color:${T.textSec};
           font-family:${T.mono};font-size:10px;cursor:pointer;
           transition:all 0.15s;white-space:nowrap;text-align:left;
         }
-        .hr-chip:hover { background:rgba(74,222,128,0.1);border-color:rgba(74,222,128,0.3);color:${T.green}; }
+        .mark-chip:hover { background:rgba(167,139,250,0.12);border-color:rgba(167,139,250,0.35);color:${T.purple}; }
         .chat-scroll::-webkit-scrollbar { width:4px; }
         .chat-scroll::-webkit-scrollbar-track { background:transparent; }
-        .chat-scroll::-webkit-scrollbar-thumb { background:rgba(74,222,128,0.2);border-radius:2px; }
+        .chat-scroll::-webkit-scrollbar-thumb { background:rgba(167,139,250,0.2);border-radius:2px; }
       `}</style>
 
       <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', flexDirection: 'column' }}>
@@ -229,8 +235,8 @@ export default function HRAgentPage() {
         {/* Background grid */}
         <div style={{
           position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
-          backgroundImage: 'linear-gradient(rgba(74,222,128,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(74,222,128,0.025) 1px,transparent 1px)',
-          backgroundSize: '60px 60px', animation: 'hr-grid 6s ease-in-out infinite',
+          backgroundImage: 'linear-gradient(rgba(167,139,250,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(167,139,250,0.03) 1px,transparent 1px)',
+          backgroundSize: '60px 60px', animation: 'mark-grid 6s ease-in-out infinite',
         }} />
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', maxWidth: 900, width: '100%', margin: '0 auto', padding: '88px 24px 0', position: 'relative', zIndex: 1 }}>
@@ -238,8 +244,8 @@ export default function HRAgentPage() {
           {/* Loading */}
           {loading && (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, color: T.textMut }}>
-              <span className="hr-spinner" />
-              <span style={M({ fontSize: 12 })}>Connecting to HR Agent…</span>
+              <span className="mark-spinner" />
+              <span style={M({ fontSize: 12 })}>Connecting to MARK…</span>
             </div>
           )}
 
@@ -250,12 +256,12 @@ export default function HRAgentPage() {
                 <div style={{ fontSize: 48, marginBottom: 20 }}>🔒</div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: T.text, marginBottom: 10 }}>No Access</div>
                 <div style={M({ fontSize: 12, color: T.textMut, lineHeight: 1.7, marginBottom: 24 })}>
-                  You don't have access to the HR Agent. Contact your administrator to enable this subscription.
+                  You don't have access to the Marketing Agent (MARK). Contact your administrator to enable this subscription.
                 </div>
                 <Link href="/profile" style={{
                   display: 'inline-block', padding: '10px 22px', borderRadius: 9,
-                  background: T.greenDim, border: '1px solid rgba(74,222,128,0.25)',
-                  color: T.green, textDecoration: 'none',
+                  background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.25)',
+                  color: T.purple, textDecoration: 'none',
                   ...M({ fontSize: 10, letterSpacing: '0.08em' }),
                 }}>
                   → View Profile
@@ -273,34 +279,34 @@ export default function HRAgentPage() {
                 borderBottom: `1px solid ${T.border}`, marginBottom: 0,
               }}>
                 <div style={{
-                  width: 48, height: 48, borderRadius: 14, background: T.greenDim,
-                  border: '1px solid rgba(74,222,128,0.3)',
+                  width: 48, height: 48, borderRadius: 14, background: T.purpleDim,
+                  border: '1px solid rgba(167,139,250,0.3)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
                 }}>
-                  👥
+                  🎯
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: T.text }}>HR Agent</span>
-                    <span style={M({ fontSize: 8, padding: '2px 6px', borderRadius: 4, background: T.greenDim, color: T.green, fontWeight: 700, letterSpacing: '0.1em' })}>PEOPLE OPS</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: T.text }}>MARK</span>
+                    <span style={M({ fontSize: 8, padding: '2px 6px', borderRadius: 4, background: T.purpleDim, color: T.purple, fontWeight: 700, letterSpacing: '0.1em' })}>MARKETING AGENT</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: 3, background: T.green, animation: 'hr-pulse 2s ease-in-out infinite' }} />
+                      <div style={{ width: 6, height: 6, borderRadius: 3, background: T.green, animation: 'mark-pulse 2s ease-in-out infinite' }} />
                       <span style={M({ fontSize: 8.5, color: T.green })}>Online</span>
                     </div>
                   </div>
                   <div style={M({ fontSize: 10, color: T.textMut, marginTop: 2 })}>
-                    Recruitment automation, document analysis &amp; people intelligence
+                    Marketing automation, content creation &amp; campaign intelligence
                   </div>
                 </div>
                 {sessionId && (
                   <div style={M({ fontSize: 8, color: T.textMut, textAlign: 'right' })}>
                     <div>Session</div>
-                    <div style={{ color: T.green }}>{sessionId.slice(0, 8)}…</div>
+                    <div style={{ color: T.purple }}>{sessionId.slice(0, 8)}…</div>
                   </div>
                 )}
                 <Link href="/profile" style={{
                   padding: '7px 12px', borderRadius: 8,
-                  border: '1px solid rgba(74,222,128,0.15)', background: 'transparent',
+                  border: '1px solid rgba(167,139,250,0.15)', background: 'transparent',
                   color: T.textMut, textDecoration: 'none',
                   ...M({ fontSize: 9, letterSpacing: '0.06em' }),
                 }}>
@@ -317,37 +323,41 @@ export default function HRAgentPage() {
                   minHeight: 0, maxHeight: 'calc(100vh - 340px)',
                 }}
               >
+                {/* Welcome message */}
                 {messages.length === 0 && (
-                  <div style={{ animation: 'hr-slideIn 0.4s ease' }}>
+                  <div style={{ animation: 'mark-slideIn 0.4s ease' }}>
                     <Bubble msg={{
                       id: 'welcome',
                       role: 'agent',
-                      content: `Hello ${profile?.full_name?.split(' ')[0] ?? 'there'}! I'm your HR Agent, specialising in people operations and talent management. I can help you with:\n\n• Writing job descriptions and posting them\n• Screening and ranking candidates\n• Drafting interview questions\n• Creating onboarding plans\n• HR policy drafting and review\n• Performance management templates\n\nWhat HR challenge can I help you solve today?`,
+                      content: `Hi ${profile?.full_name?.split(' ')[0] ?? 'there'}! I'm MARK, your Marketing Agent. I can help you with:\n\n• Content creation (posts, emails, copy)\n• Campaign strategy and planning\n• Audience analysis and targeting\n• Brand messaging and positioning\n\nWhat would you like to work on today?`,
                       ts: Date.now(),
                     }} />
+                    {/* Suggestions */}
                     <div style={{ marginBottom: 20 }}>
-                      <div style={M({ fontSize: 9, color: T.textMut, marginBottom: 10, letterSpacing: '0.1em', textTransform: 'uppercase' })}>Quick Starts</div>
+                      <div style={M({ fontSize: 9, color: T.textMut, marginBottom: 10, letterSpacing: '0.1em', textTransform: 'uppercase' })}>Suggestions</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                         {SUGGESTIONS.map(s => (
-                          <button key={s} className="hr-chip" onClick={() => send(s)}>{s}</button>
+                          <button key={s} className="mark-chip" onClick={() => send(s)}>{s}</button>
                         ))}
                       </div>
                     </div>
                   </div>
                 )}
 
+                {/* Messages */}
                 {messages.map(msg => <Bubble key={msg.id} msg={msg} />)}
 
+                {/* Typing indicator */}
                 {typing && (
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 14 }}>
                     <div style={{
                       width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                      background: T.greenDim, border: '1px solid rgba(74,222,128,0.3)',
+                      background: T.purpleDim, border: '1px solid rgba(167,139,250,0.3)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
-                    }}>👥</div>
+                    }}>🎯</div>
                     <div style={{
                       padding: '11px 15px', borderRadius: '14px 14px 14px 4px',
-                      background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.2)',
+                      background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.18)',
                     }}>
                       <TypingDots />
                     </div>
@@ -364,9 +374,10 @@ export default function HRAgentPage() {
                 </div>
               )}
 
-              {/* Input */}
+              {/* Input area */}
               <div style={{ padding: '12px 0 24px', flexShrink: 0 }}>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+                  {/* User avatar */}
                   <div style={{
                     width: 34, height: 34, borderRadius: 10, flexShrink: 0,
                     background: 'rgba(240,184,73,0.1)', border: '1px solid rgba(240,184,73,0.2)',
@@ -377,9 +388,9 @@ export default function HRAgentPage() {
                   </div>
                   <textarea
                     ref={inputRef}
-                    className="hr-input"
+                    className="mark-input"
                     rows={1}
-                    placeholder="Message HR Agent… (Shift+Enter for new line)"
+                    placeholder="Message MARK… (Shift+Enter for new line)"
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
@@ -391,7 +402,7 @@ export default function HRAgentPage() {
                     }}
                   />
                   <button
-                    className="hr-send"
+                    className="mark-send"
                     onClick={() => send(input)}
                     disabled={!input.trim() || typing}
                   >
@@ -399,7 +410,7 @@ export default function HRAgentPage() {
                   </button>
                 </div>
                 <div style={M({ fontSize: 9, color: T.textMut, marginTop: 8, textAlign: 'center' })}>
-                  HR Agent is AI-powered — always review outputs with your HR team before use.
+                  MARK is powered by AI — responses may vary. Review important content before publishing.
                 </div>
               </div>
             </>
