@@ -2,51 +2,19 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Edit, Mail, Shield, Bell, Palette,
-  CreditCard, User,
-  Download, Trash2, Eye, EyeOff,
-  RefreshCw, Terminal, Wifi, WifiOff, Copy, CheckCircle,
+  Edit, Mail, Shield, Bell, Palette, Phone,
+  CreditCard, User, Key,
+  Eye, EyeOff,
+  RefreshCw, Copy, CheckCircle,
+  Trash2, LogOut, Bot,
 } from 'lucide-react';
-
-// ======================== API CONFIG ========================
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'https://sia-backend.onrender.com';
-
-// ── reads 'access_token' (matches what LoginModal now saves) ──
-async function apiFetch(path: string, options: RequestInit = {}) {
-  const token =
-    typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`${res.status}: ${body}`);
-  }
-  return res.json();
-}
-
-async function refreshToken(): Promise<string | null> {
-  const refresh =
-    typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
-  if (!refresh) return null;
-  try {
-    const data = await apiFetch('/api/auth/refresh/', {
-      method: 'POST',
-      body: JSON.stringify({ refresh_token: refresh }),
-    });
-    const newToken = data.data?.access_token ?? data.access_token ?? data.access ?? null;
-    if (newToken) localStorage.setItem('access_token', newToken);
-    return newToken;
-  } catch {
-    return null;
-  }
-}
+import { useRouter } from 'next/navigation';
+import {
+  apiFetch, BASE_URL, refreshAccessToken, clearAuth,
+  fetchProfile, updateProfile, fetchAgentStatus,
+  type UserProfile as BackendUserProfile,
+  type AgentStatus,
+} from '@/lib/api';
 
 // ======================== DESIGN TOKENS ========================
 const T = {
@@ -72,18 +40,7 @@ function Mono(s: React.CSSProperties): React.CSSProperties {
 
 // ======================== TYPES ========================
 export type SettingsSection =
-  'profile' | 'notifications' | 'appearance' | 'privacy' | 'billing' | 'api';
-
-interface UserProfile { first_name: string; last_name: string; email: string; role?: string; }
-interface AgentAccess {
-  hr: boolean; marketing: boolean;
-  hr_subscription?:         { plan: string; renews: string; status: string };
-  marketing_subscription?:  { plan: string; renews: string; status: string };
-}
-interface AgentStatus {
-  mark?: { status: string; active: boolean };
-  hr?:   { status: string; active: boolean };
-}
+  'profile' | 'notifications' | 'appearance' | 'privacy' | 'billing' | 'integration';
 
 // ======================== SMALL COMPONENTS ========================
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
@@ -246,31 +203,47 @@ function SaveBar({ onSave }: { onSave?: () => Promise<void> }) {
 
 // ======================== PROFILE SECTION ========================
 function ProfileSection({
-  profile, setProfile, access, agentStatus, apiOnline, loading,
+  profile, setProfile, agentStatus, loading,
 }: {
-  profile: UserProfile; setProfile: (p: UserProfile) => void;
-  access: AgentAccess; agentStatus: AgentStatus; apiOnline: boolean; loading: boolean;
+  profile: BackendUserProfile | null;
+  setProfile: (p: BackendUserProfile) => void;
+  agentStatus: AgentStatus | null;
+  loading: boolean;
 }) {
   const [editMode, setEditMode] = useState(false);
-  const [buf, setBuf] = useState(profile);
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { setBuf(profile); }, [profile]);
+  useEffect(() => {
+    setFullName(profile?.full_name ?? '');
+    setPhone(profile?.phone ?? '');
+  }, [profile]);
 
-  const initials =
-    `${profile.first_name?.[0] ?? ''}${profile.last_name?.[0] ?? ''}`.toUpperCase() || '?';
-  const fullName = `${profile.first_name} ${profile.last_name}`.trim() || 'User';
+  const initials = (profile?.full_name ?? '?')
+    .split(' ')
+    .filter(Boolean)
+    .map((w: string) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || '?';
 
   const saveProfile = async () => {
+    setSaving(true);
     try {
-      await apiFetch('/api/auth/profile/update/', {
-        method: 'PUT',
-        body: JSON.stringify({ first_name: buf.first_name, last_name: buf.last_name }),
-      });
-    } catch { /* optimistic */ }
-    setProfile(buf);
-    setEditMode(false);
+      const updated = await updateProfile({ full_name: fullName, phone: phone || undefined });
+      setProfile(updated);
+      setEditMode(false);
+    } catch {
+      setEditMode(false);
+    }
+    setSaving(false);
   };
+
+  const canMark = agentStatus?.can_access_mark ?? profile?.can_access_mark ?? false;
+  const canHR   = agentStatus?.can_access_hr   ?? profile?.can_access_hr   ?? false;
+  const tenant  = agentStatus?.tenant ?? profile?.tenant;
 
   return (
     <div style={{ animation: 's-fadeUp 0.35s ease both' }}>
@@ -284,7 +257,7 @@ function ProfileSection({
         .s-plan-card:hover { box-shadow: 0 0 20px rgba(240,184,73,0.08); }
       `}</style>
 
-      {/* ── Hero card ── */}
+      {/* Hero card */}
       <div style={{
         borderRadius: 14, border: `1px solid rgba(240,184,73,0.16)`,
         background: 'rgba(240,184,73,0.025)', padding: '24px 28px', marginBottom: 22,
@@ -305,8 +278,8 @@ function ProfileSection({
               width: 76, height: 76, borderRadius: 14,
               background: 'linear-gradient(135deg,rgba(240,184,73,0.14),rgba(240,184,73,0.06))',
               border: '1px solid rgba(240,184,73,0.32)', display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', position: 'relative', overflow: 'hidden',
+              alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+              position: 'relative', overflow: 'hidden',
             }}>
               {loading
                 ? <span className="s-spinner" />
@@ -324,136 +297,145 @@ function ProfileSection({
           <div style={{ flex: 1 }}>
             {editMode ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input value={buf.first_name} onChange={e => setBuf(p => ({ ...p, first_name: e.target.value }))}
-                    placeholder="First name"
-                    style={Mono({ flex: 1, padding: '7px 10px', borderRadius: 8, background: 'rgba(240,184,73,0.06)', border: `1px solid rgba(240,184,73,0.25)`, color: T.text, fontSize: 13 })} />
-                  <input value={buf.last_name} onChange={e => setBuf(p => ({ ...p, last_name: e.target.value }))}
-                    placeholder="Last name"
-                    style={Mono({ flex: 1, padding: '7px 10px', borderRadius: 8, background: 'rgba(240,184,73,0.06)', border: `1px solid rgba(240,184,73,0.25)`, color: T.text, fontSize: 13 })} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <input
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    placeholder="Full name"
+                    style={Mono({ padding: '7px 10px', borderRadius: 8, background: 'rgba(240,184,73,0.06)', border: `1px solid rgba(240,184,73,0.25)`, color: T.text, fontSize: 13 })}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Phone size={11} color={T.textMut} style={{ flexShrink: 0 }} />
+                    <input
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      placeholder="Phone (optional)"
+                      style={Mono({ flex: 1, padding: '7px 10px', borderRadius: 8, background: 'rgba(240,184,73,0.06)', border: `1px solid rgba(240,184,73,0.25)`, color: T.text, fontSize: 13 })}
+                    />
+                  </div>
                 </div>
               </div>
             ) : (
               <>
                 <div style={Mono({ fontSize: 18, fontWeight: 700, color: T.text, marginBottom: 3 })}>
-                  {loading ? '···' : fullName}
+                  {loading ? '···' : (profile?.full_name || 'User')}
                 </div>
                 <div style={Mono({ fontSize: 11, color: T.textMut, marginBottom: 6 })}>
-                  {loading ? '···' : (profile.role ?? '—')}
+                  {loading ? '···' : (profile?.role === 'super_admin' ? 'Super Admin' : 'User')}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <Mail size={11} color={T.textMut} />
-                  <span style={Mono({ fontSize: 10.5, color: 'rgba(240,184,73,0.52)' })}>
-                    {loading ? '···' : profile.email}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
-                  {apiOnline ? <Wifi size={10} color={T.green} /> : <WifiOff size={10} color={T.textMut} />}
-                  <span style={Mono({ fontSize: 8.5, color: apiOnline ? 'rgba(74,222,128,0.6)' : T.textMut, letterSpacing: '0.06em' })}>
-                    {apiOnline ? `Live · ${BASE_URL}` : 'Demo mode · API offline'}
-                  </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <Mail size={11} color={T.textMut} />
+                    <span style={Mono({ fontSize: 10.5, color: 'rgba(240,184,73,0.52)' })}>
+                      {loading ? '···' : profile?.email}
+                    </span>
+                  </div>
+                  {profile?.phone && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <Phone size={11} color={T.textMut} />
+                      <span style={Mono({ fontSize: 10.5, color: 'rgba(240,184,73,0.52)' })}>
+                        {profile.phone}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </>
             )}
           </div>
 
           <button
-            onClick={() => { if (editMode) { saveProfile(); } else { setBuf(profile); setEditMode(true); } }}
+            onClick={() => { if (editMode) { saveProfile(); } else { setEditMode(true); } }}
+            disabled={saving}
             style={Mono({
               padding: '8px 17px', borderRadius: 8, border: `1px solid rgba(240,184,73,0.3)`,
               background: 'rgba(240,184,73,0.07)', color: T.gold, fontSize: 9.5,
-              letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
+              letterSpacing: '0.1em', textTransform: 'uppercase', cursor: saving ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 6,
-            })}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(240,184,73,0.15)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(240,184,73,0.07)'; }}>
-            <Edit size={11} /> {editMode ? 'Save' : 'Edit'}
+            })}>
+            <Edit size={11} /> {saving ? 'Saving…' : editMode ? 'Save' : 'Edit'}
           </button>
+          {editMode && !saving && (
+            <button
+              onClick={() => { setEditMode(false); setFullName(profile?.full_name ?? ''); setPhone(profile?.phone ?? ''); }}
+              style={Mono({ padding: '8px 14px', borderRadius: 8, border: `1px solid ${T.border}`, background: 'transparent', color: T.textMut, fontSize: 9.5, cursor: 'pointer' })}>
+              Cancel
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Metrics */}
-      <SectionDivider>Performance Metrics</SectionDivider>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 22 }}>
-        <StatCard label="Documents Processed" value="1,284" sub="+12 this week" color={T.gold} loading={loading} />
-        <StatCard
-          label="Agents Used"
-          value={`${[access.hr, access.marketing].filter(Boolean).length}`}
-          sub={[access.hr && 'HR', access.marketing && 'Marketing'].filter(Boolean).join(' · ') || '—'}
-          color={T.cyan} loading={loading}
-        />
-        <StatCard
-          label="HR Agent"
-          value={access.hr_subscription?.plan ?? (access.hr ? 'Active' : 'No Access')}
-          badge={access.hr ? (access.hr_subscription?.status ?? 'ACTIVE') : undefined}
-          sub={access.hr ? `Renews ${access.hr_subscription?.renews ?? '—'}` : 'Not subscribed'}
-          color={T.green} loading={loading}
-        />
-        <StatCard
-          label="Marketing Agent"
-          value={access.marketing_subscription?.plan ?? (access.marketing ? 'Active' : 'No Access')}
-          badge={access.marketing ? (access.marketing_subscription?.status ?? 'ACTIVE') : undefined}
-          sub={access.marketing ? `Renews ${access.marketing_subscription?.renews ?? '—'}` : 'Not subscribed'}
-          color={T.purple} loading={loading}
-        />
-      </div>
-
-      {/* Live agent status */}
-      <SectionDivider>Live Agent Status</SectionDivider>
+      {/* Agent access */}
+      <SectionDivider>Agent Access</SectionDivider>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 22 }}>
-        {([['hr', 'HR Agent', '#f0b849'] as const, ['mark', 'Marketing Agent', '#a78bfa'] as const]).map(([key, label, color]) => {
-          const st = agentStatus[key as keyof AgentStatus];
-          return (
-            <div key={key} style={{
-              padding: '14px 16px', borderRadius: 11, border: `1px solid ${color}22`,
-              background: `${color}06`, display: 'flex', alignItems: 'center', gap: 12,
-            }}>
-              <StatusDot active={loading ? false : st?.active} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11.5, color: T.textSec }}>{label}</div>
-                <div style={Mono({ fontSize: 9, color: st?.active ? T.green : T.textMut, letterSpacing: '0.08em', marginTop: 2 })}>
-                  {loading ? '···' : (st?.status ?? 'UNKNOWN')}
-                </div>
-              </div>
-              <div style={Mono({ fontSize: 8.5, color: `${color}55` })}>
-                /api/.../agents/{key}/
+        {([
+          { key: 'mark', label: 'Marketing Agent (MARK)', can: canMark, color: T.purple },
+          { key: 'hr',   label: 'HR Agent',               can: canHR,   color: T.green },
+        ] as const).map(({ key, label, can, color }) => (
+          <div key={key} style={{
+            padding: '14px 16px', borderRadius: 11, border: `1px solid ${color}22`,
+            background: `${color}06`, display: 'flex', alignItems: 'center', gap: 12,
+          }}>
+            <StatusDot active={loading ? false : can} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11.5, color: T.textSec }}>{label}</div>
+              <div style={Mono({ fontSize: 9, color: can ? T.green : T.textMut, letterSpacing: '0.08em', marginTop: 2 })}>
+                {loading ? '···' : can ? 'ACCESS GRANTED' : 'NO SUBSCRIPTION'}
               </div>
             </div>
-          );
-        })}
-      </div>
-
-      {/* API Endpoints */}
-      <SectionDivider>API Endpoints — Profile</SectionDivider>
-      <CardBox>
-        {[
-          { m: 'GET' as const, path: '/api/auth/profile/',          desc: 'Fetch user profile data' },
-          { m: 'PUT' as const, path: '/api/auth/profile/update/',   desc: 'Update first_name, last_name' },
-          { m: 'GET' as const, path: '/api/auth/access/',           desc: 'Check agent subscriptions' },
-          { m: 'GET' as const, path: '/api/auth/session/validate/', desc: 'Validate current session token' },
-        ].map((ep, i, arr) => (
-          <div key={i} style={{
-            display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
-            borderBottom: i < arr.length - 1 ? `1px solid ${T.border}` : 'none',
-          }}>
-            <ApiMethodTag method={ep.m} />
-            <span style={Mono({ fontSize: 10, color: 'rgba(240,184,73,0.55)', flex: 1 })}>{ep.path}</span>
-            <span style={Mono({ fontSize: 9, color: T.textMut })}>{ep.desc}</span>
           </div>
         ))}
-      </CardBox>
+      </div>
+
+      {/* Tenant info */}
+      {tenant && (
+        <>
+          <SectionDivider>Organisation</SectionDivider>
+          <CardBox>
+            <Row title="Company" desc={tenant.name}>
+              <span style={Mono({ fontSize: 8, padding: '2px 7px', borderRadius: 4, background: `${T.cyan}18`, color: T.cyan, border: `1px solid ${T.cyan}35` })}>
+                {tenant.subscription_type.toUpperCase()}
+              </span>
+            </Row>
+            <Row title="Subscription Status" desc={`Plan: ${tenant.subscription_type}`} noBorder>
+              <span style={Mono({
+                fontSize: 8, padding: '2px 7px', borderRadius: 4, fontWeight: 700,
+                background: tenant.subscription_status === 'active' || tenant.subscription_status === 'trial'
+                  ? T.greenDim : 'rgba(248,113,113,0.1)',
+                color: tenant.subscription_status === 'active' || tenant.subscription_status === 'trial'
+                  ? T.green : T.red,
+                border: `1px solid ${tenant.subscription_status === 'active' || tenant.subscription_status === 'trial' ? 'rgba(74,222,128,0.2)' : 'rgba(248,113,113,0.2)'}`,
+              })}>
+                {tenant.subscription_status.toUpperCase()}
+              </span>
+            </Row>
+          </CardBox>
+        </>
+      )}
     </div>
   );
 }
 
 // ======================== NOTIFICATIONS SECTION ========================
+const NOTIF_KEY = 'sia_notifications';
+const NOTIF_DEFAULTS = {
+  agentCompleted: true, agentError: true, weeklyReport: true,
+  leadAlert: false, docProcessed: true, systemUpdates: false,
+  emailDigest: true, slackPush: false, smsCritical: false,
+};
+
 function NotificationsSection() {
-  const [n, setN] = useState({
-    agentCompleted: true, agentError: true, weeklyReport: true,
-    leadAlert: false, docProcessed: true, systemUpdates: false,
-    emailDigest: true, slackPush: false, smsCritical: false,
+  const [n, setN] = useState(() => {
+    if (typeof window === 'undefined') return NOTIF_DEFAULTS;
+    try {
+      const stored = localStorage.getItem(NOTIF_KEY);
+      return stored ? { ...NOTIF_DEFAULTS, ...JSON.parse(stored) } : NOTIF_DEFAULTS;
+    } catch { return NOTIF_DEFAULTS; }
   });
-  const set = (k: keyof typeof n) => (v: boolean) => setN(p => ({ ...p, [k]: v }));
+  const set = (k: keyof typeof n) => (v: boolean) => setN((p: typeof n) => {
+    const next = { ...p, [k]: v };
+    localStorage.setItem(NOTIF_KEY, JSON.stringify(next));
+    return next;
+  });
 
   return (
     <div style={{ animation: 's-fadeUp 0.35s ease both' }}>
@@ -473,8 +455,8 @@ function NotificationsSection() {
       <SectionDivider>Reports &amp; Digests</SectionDivider>
       <CardBox>
         {[
-          { k: 'weeklyReport',   t: 'Weekly Performance Report', d: 'Every Monday 09:00' },
-          { k: 'systemUpdates',  t: 'System Updates',            d: 'Platform changes and API upgrades' },
+          { k: 'weeklyReport',  t: 'Weekly Performance Report', d: 'Every Monday 09:00' },
+          { k: 'systemUpdates', t: 'System Updates',            d: 'Platform changes and API upgrades' },
         ].map((r, ri, arr) => (
           <Row key={r.k} title={r.t} desc={r.d} noBorder={ri === arr.length - 1}>
             <Toggle on={n[r.k as keyof typeof n]} onChange={set(r.k as keyof typeof n)} />
@@ -484,9 +466,9 @@ function NotificationsSection() {
       <SectionDivider>Delivery Channels</SectionDivider>
       <CardBox>
         {[
-          { k: 'emailDigest', t: 'Email Digest', d: 'Sent to profile email' },
-          { k: 'slackPush',   t: 'Slack Push',   d: '#sia-notifications channel' },
-          { k: 'smsCritical', t: 'SMS — Critical', d: 'Agent errors only' },
+          { k: 'emailDigest', t: 'Email Digest',    d: 'Sent to profile email' },
+          { k: 'slackPush',   t: 'Slack Push',      d: '#sia-notifications channel' },
+          { k: 'smsCritical', t: 'SMS — Critical',  d: 'Agent errors only' },
         ].map((r, ri, arr) => (
           <Row key={r.k} title={r.t} desc={r.d} noBorder={ri === arr.length - 1}>
             <Toggle on={n[r.k as keyof typeof n]} onChange={set(r.k as keyof typeof n)} />
@@ -499,13 +481,34 @@ function NotificationsSection() {
 }
 
 // ======================== APPEARANCE SECTION ========================
+const APPEAR_KEY = 'sia_appearance';
+const APPEAR_DEFAULTS = {
+  theme: 'darker' as 'dark' | 'darker' | 'terminal',
+  density: 'default' as 'compact' | 'default' | 'spacious',
+  fontSize: 13,
+  animations: true,
+  scanlines: false,
+  gridOverlay: false,
+};
+
 function AppearanceSection() {
-  const [theme,     setTheme]     = useState<'dark' | 'darker' | 'terminal'>('darker');
-  const [density,   setDensity]   = useState<'compact' | 'default' | 'spacious'>('default');
-  const [fontSize,  setFontSize]  = useState(13);
-  const [animations, setAnimations] = useState(true);
-  const [scanlines,  setScanlines]  = useState(false);
-  const [gridOverlay, setGridOverlay] = useState(false);
+  const [prefs, setPrefs] = useState(() => {
+    if (typeof window === 'undefined') return APPEAR_DEFAULTS;
+    try {
+      const stored = localStorage.getItem(APPEAR_KEY);
+      return stored ? { ...APPEAR_DEFAULTS, ...JSON.parse(stored) } : APPEAR_DEFAULTS;
+    } catch { return APPEAR_DEFAULTS; }
+  });
+
+  const save = (patch: Partial<typeof APPEAR_DEFAULTS>) => {
+    setPrefs((p: typeof APPEAR_DEFAULTS) => {
+      const next = { ...p, ...patch };
+      localStorage.setItem(APPEAR_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const { theme, density, fontSize, animations, scanlines, gridOverlay } = prefs;
 
   return (
     <div style={{ animation: 's-fadeUp 0.35s ease both' }}>
@@ -514,7 +517,7 @@ function AppearanceSection() {
         <Row title="Color Theme" desc="Terminal background palette">
           <div style={{ display: 'flex', gap: 6 }}>
             {(['dark', 'darker', 'terminal'] as const).map(d => (
-              <button key={d} onClick={() => setTheme(d)} style={Mono({
+              <button key={d} onClick={() => save({ theme: d })} style={Mono({
                 padding: '5px 10px', borderRadius: 7, fontSize: 9, letterSpacing: '0.06em',
                 border: `1px solid ${theme === d ? T.gold : T.border}`,
                 background: theme === d ? 'rgba(240,184,73,0.12)' : 'transparent',
@@ -526,7 +529,7 @@ function AppearanceSection() {
         <Row title="Density" desc="Interface spacing">
           <div style={{ display: 'flex', gap: 6 }}>
             {(['compact', 'default', 'spacious'] as const).map(d => (
-              <button key={d} onClick={() => setDensity(d)} style={Mono({
+              <button key={d} onClick={() => save({ density: d })} style={Mono({
                 padding: '5px 10px', borderRadius: 7, fontSize: 9, letterSpacing: '0.06em',
                 border: `1px solid ${density === d ? T.gold : T.border}`,
                 background: density === d ? 'rgba(240,184,73,0.12)' : 'transparent',
@@ -537,14 +540,14 @@ function AppearanceSection() {
         </Row>
         <Row title="Base Font Size" desc={`Terminal mono size: ${fontSize}px`}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button onClick={() => setFontSize(f => Math.max(10, f - 1))} style={Mono({ width: 28, height: 28, borderRadius: 7, border: `1px solid ${T.border}`, background: 'transparent', color: T.textSec, cursor: 'pointer', fontSize: 16 })}>−</button>
+            <button onClick={() => save({ fontSize: Math.max(10, fontSize - 1) })} style={Mono({ width: 28, height: 28, borderRadius: 7, border: `1px solid ${T.border}`, background: 'transparent', color: T.textSec, cursor: 'pointer', fontSize: 16 })}>−</button>
             <span style={Mono({ color: T.gold, fontSize: 13, width: 26, textAlign: 'center' })}>{fontSize}</span>
-            <button onClick={() => setFontSize(f => Math.min(18, f + 1))} style={Mono({ width: 28, height: 28, borderRadius: 7, border: `1px solid ${T.border}`, background: 'transparent', color: T.textSec, cursor: 'pointer', fontSize: 16 })}>+</button>
+            <button onClick={() => save({ fontSize: Math.min(18, fontSize + 1) })} style={Mono({ width: 28, height: 28, borderRadius: 7, border: `1px solid ${T.border}`, background: 'transparent', color: T.textSec, cursor: 'pointer', fontSize: 16 })}>+</button>
           </div>
         </Row>
-        <Row title="Motion &amp; Animations" desc="Smooth transitions, pulse effects"><Toggle on={animations} onChange={setAnimations} /></Row>
-        <Row title="CRT Scanlines" desc="Retro terminal overlay effect"><Toggle on={scanlines} onChange={setScanlines} /></Row>
-        <Row title="Grid Overlay" desc="Subtle background grid pattern" noBorder><Toggle on={gridOverlay} onChange={setGridOverlay} /></Row>
+        <Row title="Motion &amp; Animations" desc="Smooth transitions, pulse effects"><Toggle on={animations} onChange={v => save({ animations: v })} /></Row>
+        <Row title="CRT Scanlines" desc="Retro terminal overlay effect"><Toggle on={scanlines} onChange={v => save({ scanlines: v })} /></Row>
+        <Row title="Grid Overlay" desc="Subtle background grid pattern" noBorder><Toggle on={gridOverlay} onChange={v => save({ gridOverlay: v })} /></Row>
       </CardBox>
       <SaveBar onSave={async () => { await new Promise(r => setTimeout(r, 700)); }} />
     </div>
@@ -552,17 +555,30 @@ function AppearanceSection() {
 }
 
 // ======================== PRIVACY SECTION ========================
+const PRIVACY_KEY = 'sia_privacy';
+const PRIVACY_DEFAULTS = { twoFA: false, pub: true, log: true, sharing: false };
+
 function PrivacySection() {
-  const [twoFA,   setTwoFA]   = useState(false);
-  const [pub,     setPub]     = useState(true);
-  const [log,     setLog]     = useState(true);
-  const [sharing, setSharing] = useState(false);
+  const [priv, setPriv] = useState(() => {
+    if (typeof window === 'undefined') return PRIVACY_DEFAULTS;
+    try {
+      const stored = localStorage.getItem(PRIVACY_KEY);
+      return stored ? { ...PRIVACY_DEFAULTS, ...JSON.parse(stored) } : PRIVACY_DEFAULTS;
+    } catch { return PRIVACY_DEFAULTS; }
+  });
+  const setP = (k: keyof typeof PRIVACY_DEFAULTS) => (v: boolean) => setPriv((p: typeof PRIVACY_DEFAULTS) => {
+    const next = { ...p, [k]: v };
+    localStorage.setItem(PRIVACY_KEY, JSON.stringify(next));
+    return next;
+  });
+  const { twoFA, pub, log, sharing } = priv;
+
   const [showKey, setShowKey] = useState(false);
   const [copied,  setCopied]  = useState(false);
 
   const apiKey = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
   const apiKeyDisplay = apiKey
-    ? (showKey ? apiKey.slice(0, 60) + '…' : `${apiKey.slice(0, 8)}${'•'.repeat(20)}${apiKey.slice(-8)}`)
+    ? (showKey ? apiKey.slice(0, 80) + '…' : `${apiKey.slice(0, 8)}${'•'.repeat(20)}${apiKey.slice(-8)}`)
     : '— not logged in —';
 
   const copyKey = () => {
@@ -577,10 +593,10 @@ function PrivacySection() {
     <div style={{ animation: 's-fadeUp 0.35s ease both' }}>
       <SectionDivider>Security</SectionDivider>
       <CardBox>
-        <Row title="Two-Factor Authentication" desc="TOTP app or SMS"><Toggle on={twoFA} onChange={setTwoFA} /></Row>
-        <Row title="Public Profile" desc="Other agents can see your profile"><Toggle on={pub} onChange={setPub} /></Row>
-        <Row title="Activity Logging" desc="Log all agent interactions"><Toggle on={log} onChange={setLog} /></Row>
-        <Row title="Data Sharing" desc="Share anonymised usage for product improvement" noBorder><Toggle on={sharing} onChange={setSharing} /></Row>
+        <Row title="Two-Factor Authentication" desc="TOTP app or SMS"><Toggle on={twoFA} onChange={setP('twoFA')} /></Row>
+        <Row title="Public Profile" desc="Other users in your org can see your profile"><Toggle on={pub} onChange={setP('pub')} /></Row>
+        <Row title="Activity Logging" desc="Log all agent interactions for audit trail"><Toggle on={log} onChange={setP('log')} /></Row>
+        <Row title="Data Sharing" desc="Share anonymised usage for product improvement" noBorder><Toggle on={sharing} onChange={setP('sharing')} /></Row>
       </CardBox>
 
       <SectionDivider>Access Token (JWT)</SectionDivider>
@@ -618,92 +634,71 @@ function PrivacySection() {
 }
 
 // ======================== BILLING SECTION ========================
-function BillingSection({ access, loading }: { access: AgentAccess; loading: boolean }) {
-  const PLANS = [
-    { id: 'starter', name: 'Starter', price: '$0',   sub: '/mo', features: ['1 Agent', '100 docs/mo', 'Community support'], color: T.textMut },
-    { id: 'pro',     name: 'Pro',     price: '$12',  sub: '/mo', features: ['3 Agents', '5,000 docs/mo', 'Priority support', 'API access'], color: T.gold, active: true },
-    { id: 'team',    name: 'Team',    price: '$49',  sub: '/mo', features: ['Unlimited agents', 'Unlimited docs', 'Dedicated support', 'SSO + SAML'], color: T.cyan },
-  ];
-  const INVOICES = [
-    { date: 'Feb 1, 2026', id: 'INV-2026-002', amount: '$12.00' },
-    { date: 'Jan 1, 2026', id: 'INV-2026-001', amount: '$12.00' },
-    { date: 'Dec 1, 2025', id: 'INV-2025-012', amount: '$12.00' },
-  ];
-  const activeAgents = [access.hr, access.marketing].filter(Boolean).length;
+function BillingSection({ profile, loading }: { profile: BackendUserProfile | null; loading: boolean }) {
+  const canMark = profile?.can_access_mark ?? false;
+  const canHR   = profile?.can_access_hr   ?? false;
+  const tenant  = profile?.tenant;
+  const activeAgents = [canMark, canHR].filter(Boolean).length;
 
   return (
     <div style={{ animation: 's-fadeUp 0.35s ease both' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 22 }}>
-        <StatCard label="Current Plan" value="Pro" color={T.gold} loading={loading} />
-        <StatCard label="Monthly Cost" value="$12" sub="Renews Mar 1, 2026" color={T.cyan} loading={loading} />
-        <StatCard label="Docs / Month" value="1,284" sub="of 5,000 limit" color={T.green} loading={loading} />
         <StatCard
-          label="Active Agents"
-          value={loading ? '···' : `${activeAgents}/3`}
-          sub={[access.hr && 'HR', access.marketing && 'Marketing'].filter(Boolean).join(' · ') || '—'}
+          label="Subscription"
+          value={tenant?.subscription_type?.toUpperCase() ?? 'NONE'}
+          color={T.gold} loading={loading}
+        />
+        <StatCard
+          label="Status"
+          value={tenant?.subscription_status?.toUpperCase() ?? 'N/A'}
+          color={T.cyan} loading={loading}
+        />
+        <StatCard
+          label="HR Agent"
+          value={canHR ? 'Active' : 'No Access'}
+          badge={canHR ? 'ON' : undefined}
+          color={T.green} loading={loading}
+        />
+        <StatCard
+          label="Marketing Agent"
+          value={canMark ? 'Active' : 'No Access'}
+          badge={canMark ? 'ON' : undefined}
+          sub={`${activeAgents}/2 agents`}
           color={T.purple} loading={loading}
         />
       </div>
 
-      <SectionDivider>Plans</SectionDivider>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 22 }}>
-        {PLANS.map(p => (
-          <div key={p.id} className="s-plan-card" style={{
-            borderRadius: 14, padding: 20, border: `1px solid ${p.active ? p.color + '45' : T.border}`,
-            background: p.active ? `${p.color}07` : T.card, position: 'relative',
-          }}>
-            {p.active && (
-              <div style={Mono({
-                position: 'absolute', top: 10, right: 12, fontSize: 7,
-                padding: '2px 6px', borderRadius: 4, background: `${p.color}20`,
-                color: p.color, border: `1px solid ${p.color}35`, letterSpacing: '0.1em',
-              })}>CURRENT</div>
-            )}
-            <div style={Mono({ fontSize: 11, fontWeight: 700, color: p.color, marginBottom: 6 })}>{p.name}</div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginBottom: 14 }}>
-              <span style={Mono({ fontSize: 22, fontWeight: 700, color: T.text })}>{p.price}</span>
-              <span style={Mono({ fontSize: 10, color: T.textMut })}>{p.sub}</span>
+      {!tenant ? (
+        <CardBox>
+          <div style={{ padding: '28px 18px', textAlign: 'center' }}>
+            <div style={Mono({ fontSize: 11, color: T.textMut, marginBottom: 12 })}>
+              No active subscription. Contact your admin to get access.
             </div>
-            {p.features.map(f => (
-              <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}>
-                <div style={{ width: 5, height: 5, borderRadius: 2, background: p.color, flexShrink: 0 }} />
-                <span style={Mono({ fontSize: 10, color: T.textSec })}>{f}</span>
-              </div>
-            ))}
-            {!p.active && (
-              <button style={Mono({
-                width: '100%', marginTop: 14, padding: '8px', borderRadius: 8,
-                border: `1px solid ${p.color}35`, background: `${p.color}08`,
-                color: p.color, fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
-              })}>Upgrade →</button>
-            )}
           </div>
-        ))}
-      </div>
-
-      <SectionDivider>Invoice History</SectionDivider>
-      <CardBox>
-        {INVOICES.map((inv, i) => (
-          <div key={i} style={{
-            display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
-            borderBottom: i < INVOICES.length - 1 ? `1px solid ${T.border}` : 'none',
-          }}>
-            <div style={{ flex: 1 }}>
-              <div style={Mono({ fontSize: 11.5, color: T.textSec, fontWeight: 600 })}>{inv.date}</div>
-              <div style={Mono({ fontSize: 9, color: T.textMut, marginTop: 2 })}>{inv.id} · Pro Plan</div>
-            </div>
-            <span style={Mono({ fontSize: 14, fontWeight: 600, color: T.text })}>{inv.amount}</span>
-            <span style={Mono({ fontSize: 8, padding: '2px 7px', borderRadius: 4, background: T.greenDim, color: T.green, border: `1px solid rgba(74,222,128,0.28)`, letterSpacing: '0.1em' })}>PAID</span>
-            <button style={Mono({ background: 'none', border: 'none', cursor: 'pointer', color: T.gold, fontSize: 9, fontWeight: 700 })}>PDF ↓</button>
-          </div>
-        ))}
-      </CardBox>
+        </CardBox>
+      ) : (
+        <CardBox>
+          <Row title="Company" desc={tenant.name}>
+            <span style={Mono({ fontSize: 9, color: T.cyan })}>{tenant.id}</span>
+          </Row>
+          <Row title="Plan" desc={`subscription_type: ${tenant.subscription_type}`} noBorder>
+            <span style={Mono({
+              fontSize: 8, padding: '3px 8px', borderRadius: 4, fontWeight: 700,
+              background: tenant.subscription_status === 'active' ? T.greenDim : 'rgba(248,113,113,0.1)',
+              color: tenant.subscription_status === 'active' ? T.green : T.red,
+              border: `1px solid ${tenant.subscription_status === 'active' ? 'rgba(74,222,128,0.2)' : 'rgba(248,113,113,0.2)'}`,
+            })}>
+              {tenant.subscription_status.toUpperCase()}
+            </span>
+          </Row>
+        </CardBox>
+      )}
     </div>
   );
 }
 
-// ======================== API EXPLORER SECTION ========================
-function ApiExplorerSection() {
+// ======================== API INTEGRATION SECTION ========================
+function ApiIntegrationSection({ profile }: { profile: BackendUserProfile | null }) {
   const [copied, setCopied] = useState<string | null>(null);
 
   const copy = (text: string, id: string) => {
@@ -712,71 +707,152 @@ function ApiExplorerSection() {
     setTimeout(() => setCopied(null), 1800);
   };
 
-  const ENDPOINT_GROUPS = [
-    {
-      section: 'Authentication', color: T.gold, items: [
-        { m: 'POST' as const, path: '/api/auth/register/', body: '{ email, password, first_name, last_name }', desc: 'Create new user account' },
-        { m: 'POST' as const, path: '/api/auth/login/',   body: '{ email, password }',                        desc: 'Returns access_token + refresh_token' },
-        { m: 'POST' as const, path: '/api/auth/refresh/', body: '{ refresh_token }',                          desc: 'Refresh expired access token' },
-        { m: 'POST' as const, path: '/api/auth/logout/',  body: 'Bearer token required',                      desc: 'Revoke current session' },
-        { m: 'GET'  as const, path: '/api/auth/profile/', body: 'Bearer token required',                      desc: 'Get user profile data' },
-        { m: 'PUT'  as const, path: '/api/auth/profile/update/', body: '{ first_name, last_name }',           desc: 'Update profile fields' },
-        { m: 'GET'  as const, path: '/api/auth/access/',  body: 'Bearer token required',                      desc: 'Check agent subscriptions' },
-        { m: 'GET'  as const, path: '/api/auth/session/validate/', body: 'Bearer token required',             desc: 'Validate session token' },
-      ],
-    },
-    {
-      section: 'Chatbot (Public)', color: T.cyan, items: [
-        { m: 'POST' as const, path: '/api/chat/',                    body: '{ message, session_id }',           desc: 'Send chat message' },
-        { m: 'GET'  as const, path: '/api/chat/session/{id}/',       body: '—',                                 desc: 'Get session info' },
-        { m: 'POST' as const, path: '/api/chat/session/reset/',      body: '{ session_id }',                    desc: 'Reset chat session' },
-        { m: 'POST' as const, path: '/api/chat/session/close/',      body: '{ session_id }',                    desc: 'Close and delete session' },
-      ],
-    },
-    {
-      section: 'Agent Proxy (Auth Required)', color: T.purple, items: [
-        { m: 'POST' as const, path: '/api/tenants/v2/agents/mark/chat/', body: '{ message, session_id }',       desc: 'Chat with Marketing Agent' },
-        { m: 'POST' as const, path: '/api/tenants/v2/agents/hr/chat/',   body: '{ message, session_id }',       desc: 'Chat with HR Agent' },
-        { m: 'GET'  as const, path: '/api/tenants/v2/agents/status/',    body: 'Bearer token required',         desc: 'Check agent status' },
-      ],
-    },
-    {
-      section: 'Waitlist', color: T.green, items: [
-        { m: 'POST' as const, path: '/api/waitlist/join/', body: '{ email }', desc: 'Join product waitlist' },
-        { m: 'GET'  as const, path: '/api/waitlist/stats/', body: '—',        desc: 'Get waitlist count' },
-      ],
-    },
-  ];
+  const canMark = profile?.can_access_mark ?? false;
+  const canHR   = profile?.can_access_hr   ?? false;
+  const apiBase = BASE_URL;
+
+  const CodeBlock = ({ id, code }: { id: string; code: string }) => (
+    <div style={{ position: 'relative', borderRadius: 10, background: 'rgba(0,0,0,0.4)', border: `1px solid ${T.border}`, overflow: 'hidden', marginTop: 8 }}>
+      <button
+        onClick={() => copy(code, id)}
+        style={Mono({
+          position: 'absolute', top: 8, right: 10, background: 'none', border: 'none',
+          cursor: 'pointer', color: copied === id ? T.green : T.textMut, fontSize: 9,
+          display: 'flex', alignItems: 'center', gap: 4, padding: '2px 4px',
+        })}>
+        {copied === id ? <><CheckCircle size={9} /> Copied</> : <><Copy size={9} /> Copy</>}
+      </button>
+      <pre style={Mono({ fontSize: 9.5, color: 'rgba(240,184,73,0.7)', padding: '14px 16px', margin: 0, lineHeight: 1.7, overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' })}>
+        {code}
+      </pre>
+    </div>
+  );
 
   return (
     <div style={{ animation: 's-fadeUp 0.35s ease both' }}>
-      {ENDPOINT_GROUPS.map((grp, gi) => (
-        <div key={gi} style={{ marginBottom: 22 }}>
-          <SectionDivider>{grp.section}</SectionDivider>
-          <CardBox>
-            {grp.items.map((ep, ei) => (
-              <div key={ei} style={{
-                padding: '12px 16px',
-                borderBottom: ei < grp.items.length - 1 ? `1px solid ${T.border}` : 'none',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 5 }}>
-                  <ApiMethodTag method={ep.m} />
-                  <span style={Mono({ fontSize: 10.5, color: 'rgba(240,184,73,0.6)', flex: 1 })}>{ep.path}</span>
-                  <button
-                    onClick={() => copy(`${BASE_URL}${ep.path}`, `${gi}-${ei}`)}
-                    style={Mono({ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: copied === `${gi}-${ei}` ? T.green : T.textMut, transition: 'color .15s' })}>
-                    {copied === `${gi}-${ei}` ? <><CheckCircle size={10} /> Copied</> : <><Copy size={10} /> Copy</>}
-                  </button>
-                </div>
-                <div style={{ display: 'flex', gap: 16 }}>
-                  <span style={Mono({ fontSize: 9, color: T.textMut })}>{ep.desc}</span>
-                  <span style={Mono({ fontSize: 9, color: 'rgba(34,211,238,0.45)', marginLeft: 'auto' })}>body: {ep.body}</span>
-                </div>
-              </div>
-            ))}
-          </CardBox>
+      {/* How it works */}
+      <div style={{ padding: '16px 18px', borderRadius: 12, background: 'rgba(167,139,250,0.06)', border: `1px solid rgba(167,139,250,0.18)`, marginBottom: 22 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: T.purple, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 7 }}>
+          <Bot size={13} /> How SIA Agent Integration Works
         </div>
-      ))}
+        <div style={Mono({ fontSize: 10, color: T.textSec, lineHeight: 1.75 })}>
+          You can connect our agents to your own tools, CRMs, or workflows via API.
+          Authenticate using your <span style={{ color: T.gold }}>Bearer token</span> (login session) or a dedicated{' '}
+          <span style={{ color: T.gold }}>API key</span> (for server-to-server use).
+          API keys are provisioned by your SIA account manager — contact us to get one.
+        </div>
+      </div>
+
+      {/* Agent access status */}
+      <SectionDivider>Your Agent Access</SectionDivider>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 22 }}>
+        {([
+          { id: 'mark', label: 'Marketing Agent (MARK)', endpoint: '/api/agents/mark/chat/', can: canMark, color: T.purple },
+          { id: 'hr',   label: 'HR Agent',               endpoint: '/api/agents/hr/chat/',   can: canHR,   color: T.green  },
+        ] as const).map(a => (
+          <div key={a.id} style={{ padding: '14px 16px', borderRadius: 11, border: `1px solid ${a.can ? a.color + '30' : T.border}`, background: a.can ? `${a.color}06` : T.card }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 7, height: 7, borderRadius: 4, background: a.can ? T.green : T.textMut, boxShadow: a.can ? `0 0 5px ${T.green}` : 'none', flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: a.can ? T.textSec : T.textMut, fontWeight: 600 }}>{a.label}</span>
+            </div>
+            {a.can ? (
+              <div style={Mono({ fontSize: 9, color: 'rgba(240,184,73,0.55)', letterSpacing: '0.03em' })}>{a.endpoint}</div>
+            ) : (
+              <div style={Mono({ fontSize: 9, color: T.textMut })}>No subscription — contact your admin</div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Authentication */}
+      <SectionDivider>Authentication</SectionDivider>
+      <CardBox>
+        <Row title="Bearer Token (Session)" desc="Use after login — short-lived, for web use">
+          <span style={Mono({ fontSize: 9, color: T.gold, background: 'rgba(240,184,73,0.08)', border: `1px solid rgba(240,184,73,0.2)`, borderRadius: 5, padding: '2px 7px' })}>JWT</span>
+        </Row>
+        <Row title="API Key" desc="Server-to-server, long-lived. Contact your SIA manager to obtain one." noBorder>
+          <span style={Mono({ fontSize: 9, color: T.cyan, background: 'rgba(34,211,238,0.08)', border: `1px solid rgba(34,211,238,0.2)`, borderRadius: 5, padding: '2px 7px' })}>X-API-Key</span>
+        </Row>
+      </CardBox>
+
+      {/* Code examples */}
+      {(canMark || canHR) && (
+        <>
+          <SectionDivider>Example — Chat with Agent</SectionDivider>
+          <div style={{ marginBottom: 16 }}>
+            <div style={Mono({ fontSize: 9.5, color: T.textMut, marginBottom: 4 })}>
+              Using Bearer token (your session JWT):
+            </div>
+            <CodeBlock
+              id="curl-jwt"
+              code={`curl -X POST ${apiBase}/api/agents/${canMark ? 'mark' : 'hr'}/chat/ \\
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{"message": "Hello, what can you help me with?", "session_id": "optional-session-id"}'`}
+            />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <div style={Mono({ fontSize: 9.5, color: T.textMut, marginBottom: 4 })}>
+              Using API key (for integrations):
+            </div>
+            <CodeBlock
+              id="curl-apikey"
+              code={`curl -X POST ${apiBase}/api/agents/${canMark ? 'mark' : 'hr'}/chat/ \\
+  -H "X-API-Key: sia_your_api_key_here" \\
+  -H "Content-Type: application/json" \\
+  -d '{"message": "Hello, what can you help me with?"}'`}
+            />
+          </div>
+          <div style={{ marginBottom: 22 }}>
+            <div style={Mono({ fontSize: 9.5, color: T.textMut, marginBottom: 4 })}>
+              JavaScript / Node.js:
+            </div>
+            <CodeBlock
+              id="js-example"
+              code={`const response = await fetch('${apiBase}/api/agents/${canMark ? 'mark' : 'hr'}/chat/', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer ' + accessToken,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    message: 'What campaigns should I run this quarter?',
+    session_id: sessionId, // optional — maintains conversation context
+  }),
+});
+const data = await response.json();
+console.log(data.data.response);`}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Response shape */}
+      <SectionDivider>Response Format</SectionDivider>
+      <CardBox>
+        <div style={{ padding: '12px 16px' }}>
+          <div style={Mono({ fontSize: 9, color: T.textMut, marginBottom: 8 })}>All responses follow this structure:</div>
+          <CodeBlock
+            id="response-shape"
+            code={`// Success
+{ "success": true, "data": { "response": "...", "session_id": "uuid" } }
+
+// Error
+{ "success": false, "error": "Human readable error message" }`}
+          />
+        </div>
+      </CardBox>
+
+      {/* Get API key CTA */}
+      <div style={{ marginTop: 22, padding: '18px 20px', borderRadius: 12, background: 'rgba(240,184,73,0.04)', border: `1px solid rgba(240,184,73,0.15)`, display: 'flex', alignItems: 'center', gap: 16 }}>
+        <Key size={20} color={T.gold} style={{ flexShrink: 0 }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 12, color: T.textSec, fontWeight: 600, marginBottom: 4 }}>Need an API Key for Integration?</div>
+          <div style={Mono({ fontSize: 9.5, color: T.textMut, lineHeight: 1.6 })}>
+            API keys enable server-to-server access without user sessions. Contact your SIA account manager or email support to request a key for your organisation.
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -788,61 +864,36 @@ const S_NAV: { id: SettingsSection; label: string; sub: string; Icon: typeof Use
   { id: 'appearance',    label: 'Appearance',   sub: 'Theme & display',   Icon: Palette    },
   { id: 'privacy',       label: 'Privacy',      sub: 'Security & keys',   Icon: Shield     },
   { id: 'billing',       label: 'Billing',      sub: 'Plans & invoices',  Icon: CreditCard },
-  { id: 'api',           label: 'API Explorer', sub: 'All endpoints',     Icon: Terminal   },
+  { id: 'integration',   label: 'Integration',  sub: 'API & embedding',   Icon: Key        },
 ];
 
 // ======================== MAIN EXPORT ========================
 export default function SettingsPage({ onBack }: { onBack?: () => void }) {
-  const [active, setActive]     = useState<SettingsSection>('profile');
+  const router = useRouter();
+  const [active, setActive] = useState<SettingsSection>('profile');
 
-  // ── no hardcoded dummy data — start empty, load from API ──
-  const [profile, setProfile]   = useState<UserProfile>({ first_name: '', last_name: '', email: '', role: '' });
-  const [access,  setAccess]    = useState<AgentAccess>({ hr: false, marketing: false });
-  const [agentStatus, setAgentStatus] = useState<AgentStatus>({ mark: { status: 'UNKNOWN', active: false }, hr: { status: 'UNKNOWN', active: false } });
+  const [profile, setProfile]         = useState<BackendUserProfile | null>(null);
+  const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
   const [apiOnline, setApiOnline]     = useState(false);
-  const [loading,   setLoading]       = useState(true);
-  const [apiError,  setApiError]      = useState<string | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [apiError, setApiError]       = useState<string | null>(null);
+  const [loggingOut, setLoggingOut]   = useState(false);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
     setApiError(null);
     try {
-      const [pRes, aRes, sRes] = await Promise.all([
-        apiFetch('/api/auth/profile/'),
-        apiFetch('/api/auth/access/'),
-        apiFetch('/api/tenants/v2/agents/status/'),
+      const [p, s] = await Promise.all([
+        fetchProfile(),
+        fetchAgentStatus().catch(() => null),
       ]);
-
-      // Backend wraps responses in { success: true, data: {...} }
-      const p = pRes.data ?? pRes;
-      const a = aRes.data ?? aRes;
-      const s = sRes.data ?? sRes;
-
-      setProfile({
-        first_name: p.first_name ?? '',
-        last_name:  p.last_name  ?? '',
-        email:      p.email      ?? '',
-        role:       p.role       ?? '',
-      });
-
-      setAccess({
-        hr:        a.hr        ?? a.has_hr      ?? a.can_access_hr   ?? false,
-        marketing: a.marketing ?? a.has_marketing ?? a.can_access_mark ?? false,
-        hr_subscription:        a.hr_subscription        ?? (a.hr        ? { plan: 'Pro', renews: '—', status: 'ACTIVE' } : undefined),
-        marketing_subscription: a.marketing_subscription ?? (a.marketing ? { plan: 'Pro', renews: '—', status: 'ACTIVE' } : undefined),
-      });
-
-      setAgentStatus({
-        mark: s.mark ?? { status: s.marketing_status ?? 'Unknown', active: s.marketing_active ?? false },
-        hr:   s.hr   ?? { status: s.hr_status        ?? 'Unknown', active: s.hr_active        ?? false },
-      });
-
+      setProfile(p);
+      if (s) setAgentStatus(s);
       setApiOnline(true);
     } catch (e: any) {
       const msg = e?.message ?? '';
-      // Auto-refresh on 401
       if (msg.includes('401')) {
-        const newToken = await refreshToken();
+        const newToken = await refreshAccessToken();
         if (newToken) { loadAll(); return; }
       }
       setApiError(msg || 'Network error');
@@ -854,13 +905,21 @@ export default function SettingsPage({ onBack }: { onBack?: () => void }) {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try { await apiFetch('/api/auth/logout/', { method: 'POST' }); } catch {}
+    clearAuth();
+    if (onBack) onBack(); // close embedded settings first
+    router.replace('/');
+  };
+
   const SECTIONS: Record<SettingsSection, React.ReactElement> = {
-    profile:       <ProfileSection profile={profile} setProfile={setProfile} access={access} agentStatus={agentStatus} apiOnline={apiOnline} loading={loading} />,
+    profile:       <ProfileSection profile={profile} setProfile={setProfile} agentStatus={agentStatus} loading={loading} />,
     notifications: <NotificationsSection />,
     appearance:    <AppearanceSection />,
     privacy:       <PrivacySection />,
-    billing:       <BillingSection access={access} loading={loading} />,
-    api:           <ApiExplorerSection />,
+    billing:       <BillingSection profile={profile} loading={loading} />,
+    integration:   <ApiIntegrationSection profile={profile} />,
   };
 
   return (
@@ -878,7 +937,7 @@ export default function SettingsPage({ onBack }: { onBack?: () => void }) {
         .s-nav-item:hover { background: rgba(240,184,73,0.06) !important; }
       `}</style>
 
-      {/* ── Sidebar ── */}
+      {/* Sidebar */}
       <div style={{ width: 200, flexShrink: 0, background: T.sidebar, borderRight: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {onBack && (
           <button onClick={onBack} style={Mono({
@@ -894,16 +953,12 @@ export default function SettingsPage({ onBack }: { onBack?: () => void }) {
           {S_NAV.map(({ id, label, sub, Icon }) => {
             const isActive = active === id;
             return (
-              <div
-                key={id}
-                className="s-nav-item"
-                onClick={() => setActive(id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px',
-                  borderRadius: 10, cursor: 'pointer', marginBottom: 3,
-                  background: isActive ? 'rgba(240,184,73,0.09)' : 'transparent',
-                  border: `1px solid ${isActive ? 'rgba(240,184,73,0.22)' : 'transparent'}`,
-                }}>
+              <div key={id} className="s-nav-item" onClick={() => setActive(id)} style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px',
+                borderRadius: 10, cursor: 'pointer', marginBottom: 3,
+                background: isActive ? 'rgba(240,184,73,0.09)' : 'transparent',
+                border: `1px solid ${isActive ? 'rgba(240,184,73,0.22)' : 'transparent'}`,
+              }}>
                 <Icon size={14} color={isActive ? T.gold : T.textMut} />
                 <div>
                   <div style={Mono({ fontSize: 11, color: isActive ? T.gold : T.textSec, fontWeight: isActive ? 600 : 400 })}>{label}</div>
@@ -914,24 +969,35 @@ export default function SettingsPage({ onBack }: { onBack?: () => void }) {
           })}
         </div>
 
-        {/* API status indicator */}
-        <div style={{ padding: '12px 14px', borderTop: `1px solid ${T.border}` }}>
+        {/* Bottom: status + logout */}
+        <div style={{ padding: '10px 14px', borderTop: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 6, height: 6, borderRadius: 3, background: apiOnline ? T.green : T.textMut, boxShadow: apiOnline ? `0 0 6px ${T.green}` : 'none' }} />
-            <span style={Mono({ fontSize: 8, color: T.textMut, letterSpacing: '0.08em' })}>
-              {loading ? 'Loading…' : apiOnline ? 'API Online' : 'API Offline'}
+            <div style={{ width: 6, height: 6, borderRadius: 3, background: apiOnline ? T.green : T.textMut, boxShadow: apiOnline ? `0 0 6px ${T.green}` : 'none', flexShrink: 0 }} />
+            <span style={Mono({ fontSize: 8, color: T.textMut, letterSpacing: '0.08em', flex: 1 })}>
+              {loading ? 'Loading…' : apiOnline ? 'Connected' : 'Offline'}
             </span>
-            <button onClick={loadAll} style={Mono({ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: T.textMut, padding: 2 })}>
+            <button onClick={loadAll} style={Mono({ background: 'none', border: 'none', cursor: 'pointer', color: T.textMut, padding: 2 })}>
               <RefreshCw size={10} />
             </button>
           </div>
           {apiError && (
-            <div style={Mono({ fontSize: 8, color: T.red, marginTop: 4, lineHeight: 1.4 })}>{apiError}</div>
+            <div style={Mono({ fontSize: 8, color: T.red, lineHeight: 1.4 })}>{apiError}</div>
           )}
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            style={Mono({
+              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 10px',
+              borderRadius: 8, background: 'none', border: `1px solid rgba(248,113,113,0.2)`,
+              color: T.red, fontSize: 9, letterSpacing: '0.07em', cursor: loggingOut ? 'not-allowed' : 'pointer',
+              opacity: loggingOut ? 0.6 : 1, transition: 'all 0.15s', width: '100%',
+            })}>
+            <LogOut size={10} /> {loggingOut ? 'Signing out…' : 'Sign Out'}
+          </button>
         </div>
       </div>
 
-      {/* ── Main content ── */}
+      {/* Main content */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
         <div style={{ maxWidth: 780 }}>
           {SECTIONS[active]}
